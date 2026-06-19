@@ -50,7 +50,7 @@ pub const Profile = enum(c_int) {
     core = glfw.OPENGL_CORE_PROFILE,
 };
 
-const Hint = struct {
+pub const Hint = struct {
     monitor: ?Monitor = null,
     share: ?Window = null,
 
@@ -324,6 +324,7 @@ pub const WindowError = error{
     FormatUnavailable,
     NoWindowContext,
 };
+
 pub fn create(width: u32, height: u32, title: []const u8, hint: Hint) WindowError!Window {
     const monitor = if (hint.monitor) |monitor| monitor.impl else null;
     const share = if (hint.share) |share| share.impl else null;
