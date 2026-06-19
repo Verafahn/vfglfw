@@ -3,6 +3,7 @@ const std = @import("std");
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    // GLFW3 Header file import.
     const glfw3 = b.addTranslateC(.{
         .root_source_file = b.path("include/c.h"),
         .optimize = optimize,
@@ -17,12 +18,10 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "glfw3.c", .module = glfw3.createModule() },
         },
     });
-    mod.addIncludePath(b.path("include/"));
     const gen = b.addExecutable(.{
         .name = "glfw_gen",
         .root_module = mod,
     });
-
     const gen_step = b.addRunArtifact(gen);
     const output = gen_step.addOutputFileArg("glfw.zig");
 
