@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .link_libc = true,
         .imports = &.{
-            .{ .name = "zglfw", .module = zglfw.module("zglfw") },
+            .{ .name = "ziglfw", .module = zglfw.module("ziglfw") },
             .{ .name = "zgl", .module = zgl.module("zgl") },
         },
     });

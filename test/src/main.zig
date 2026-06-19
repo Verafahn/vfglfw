@@ -1,5 +1,5 @@
 const std = @import("std");
-const glfw = @import("zglfw");
+const glfw = @import("ziglfw");
 const gl = @import("zgl");
 
 fn loadGL(_: @TypeOf(undefined), name: [:0]const u8) ?*align(1) const anyopaque {
