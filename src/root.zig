@@ -121,6 +121,9 @@ fn deallocate(block: ?*anyopaque, user: ?*anyopaque) callconv(.c) void {
 
 var custom_allocator: Allocator = undefined;
 
+/// Initialize GLFW.
+/// 
+/// If `allocator` is not `null`, GLFW will use this allocator.
 pub fn init(allocator: ?Allocator, hint: Hint) error{ PlatformUnavailable, InvalidValue }!void {
     inithint(hint);
     if (allocator) |alloc| {
@@ -145,6 +148,7 @@ pub fn init(allocator: ?Allocator, hint: Hint) error{ PlatformUnavailable, Inval
     }
 }
 
+/// deinit GLFW.
 pub inline fn deinit() void {
     glfw.terminate();
 }

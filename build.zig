@@ -17,6 +17,7 @@ pub fn build(b: *std.Build) !void {
         .root_module = mod,
     });
 
+    // Run rename program.
     const run_gen = b.addRunArtifact(gen);
     const step = b.step("gen", "Generator GLFW Warpper");
     step.dependOn(&run_gen.step);
