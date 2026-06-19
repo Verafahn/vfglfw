@@ -8,6 +8,10 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
     });
+    const zgl = b.dependency("zgl", .{
+        .target = target,
+        .optimize = optimize,
+    });
 
     const mod = b.createModule(.{
         .root_source_file = b.path("src/main.zig"),
@@ -16,6 +20,7 @@ pub fn build(b: *std.Build) !void {
         .link_libc = true,
         .imports = &.{
             .{ .name = "zglfw", .module = zglfw.module("zglfw") },
+            .{ .name = "zgl", .module = zgl.module("zgl") },
         },
     });
     mod.addLibraryPath(b.path("lib/"));
