@@ -765,7 +765,7 @@ pub fn getCurrentContext() ?Window {
     return @as(*Window, @ptrCast(ptr.?)).*;
 }
 
-pub fn handle(self: *Window, handle_impl: Handle) void {
+pub fn handle(self: *Window, handle_impl: Handle, config: Handle.EventConfig) void {
     self.handle_impl = handle_impl;
-    Handle.enable_callback(self);
+    Handle.enable_callback(self, config);
 }
