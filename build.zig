@@ -10,20 +10,19 @@ pub fn build(b: *std.Build) !void {
         .target = target,
     });
     // Generate rename bind.
-    const mod = b.createModule(.{
-        .root_source_file = b.path("bin/glfw_gen.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "glfw3.c", .module = glfw3.createModule() },
-        },
-    });
     const gen = b.addExecutable(.{
         .name = "glfw_gen",
-        .root_module = mod,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("bin/glfw_gen.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "glfw3.c", .module = glfw3.createModule() },
+            },
+        }),
     });
     const gen_step = b.addRunArtifact(gen);
-    const output = gen_step.addOutputFileArg("glfw.zig");
+    const output = gen_step.addOutputFileArg("glfw3");
 
     // Export module 'zglfw'.
     const zglfw = b.addModule("zglfw", .{
@@ -31,7 +30,6 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .imports = &.{
-            // .{ .name = "glfw.c", .module = glfw3.createModule() },
             .{
                 .name = "glfw.zig",
                 .module = b.createModule(.{

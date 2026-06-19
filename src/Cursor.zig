@@ -1,4 +1,4 @@
-const glfw = @import("glfw.zig");
+const glfw = @import("glfw3");
 const Image = @import("Image.zig");
 const Cursor = @This();
 

@@ -1,5 +1,5 @@
 const Handle = @This();
-const glfw = @import("glfw.zig");
+const glfw = @import("glfw3");
 const Window = @import("Window.zig");
 const input = @import("input.zig");
 const Key = input.Key;

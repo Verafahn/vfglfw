@@ -1,4 +1,4 @@
-const glfw = @import("glfw.zig");
+const glfw = @import("glfw3");
 const std = @import("std");
 
 pub const Window = @import("Window.zig");

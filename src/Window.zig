@@ -1,4 +1,4 @@
-const glfw = @import("glfw.zig");
+const glfw = @import("glfw3");
 const Monitor = @import("Monitor.zig");
 const Window = @This();
 const types = @import("root.zig");

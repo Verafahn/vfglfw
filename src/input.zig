@@ -1,4 +1,4 @@
-const glfw = @import("glfw.zig");
+const glfw = @import("glfw3");
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const input = @This();
