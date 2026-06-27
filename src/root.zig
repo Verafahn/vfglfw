@@ -122,7 +122,7 @@ fn deallocate(block: ?*anyopaque, user: ?*anyopaque) callconv(.c) void {
 var custom_allocator: Allocator = undefined;
 
 /// Initialize GLFW.
-/// 
+///
 /// If `allocator` is not `null`, GLFW will use this allocator.
 pub fn init(allocator: ?Allocator, hint: Hint) error{ PlatformUnavailable, InvalidValue }!void {
     inithint(hint);
@@ -250,3 +250,20 @@ pub fn extensionSupported(extension: []const u8) error{ NoCurrentContext, Invali
     };
     return ret == glfw.TRUE;
 }
+
+pub fn hasVulkanSupport() bool {
+    return glfw.vulkanSupported() == glfw.TRUE;
+}
+
+pub const getVersion = glfw.getVersion;
+pub const getVersionString = glfw.getVersionString;
+
+pub const setErrorCallback = glfw.setErrorCallback;
+pub const setMonitorCallback = glfw.setMonitorCallback;
+
+pub const getVideoModes = glfw.getVideoModes;
+pub const getVideoMode = glfw.getVideoMode;
+pub const setGamma = glfw.setGamma;
+pub const getGammaRamp = glfw.getGammaRamp;
+pub const setGammaRamp = glfw.setGammaRamp;
+pub const getRequiredInstanceExtensions = glfw.getRequiredInstanceExtensions;
