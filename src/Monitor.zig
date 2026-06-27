@@ -37,7 +37,7 @@ const Rectangle = types.Rectangle;
 const Size = types.Size;
 const Scale = types.Scale;
 
-pub fn getPos(self: *const Monitor) Pos {
+pub fn getPos(self: Monitor) Pos {
     var x: c_int = undefined;
     var y: c_int = undefined;
     glfw.getMonitorPos(self.impl, &x, &y);
@@ -48,7 +48,7 @@ pub fn getPos(self: *const Monitor) Pos {
     return .{ .x = @intCast(x), .y = @intCast(y) };
 }
 
-pub fn getWorkarea(self: *const Monitor) Rectangle {
+pub fn getWorkarea(self: Monitor) Rectangle {
     var x: c_int = undefined;
     var y: c_int = undefined;
     var width: c_int = undefined;
@@ -66,7 +66,7 @@ pub fn getWorkarea(self: *const Monitor) Rectangle {
     };
 }
 
-pub fn getPhysicalSize(self: *const Monitor) Size {
+pub fn getPhysicalSize(self: Monitor) Size {
     var width: c_int = undefined;
     var height: c_int = undefined;
     glfw.getMonitorPhysicalSize(self.impl, &width, &height);
@@ -80,7 +80,7 @@ pub fn getPhysicalSize(self: *const Monitor) Size {
     };
 }
 
-pub fn getContentScale(self: *const Monitor) !Scale {
+pub fn getContentScale(self: Monitor) !Scale {
     var x: f32 = undefined;
     var y: f32 = undefined;
     glfw.getMonitorContentScale(self.impl, &x, &y);
@@ -88,7 +88,7 @@ pub fn getContentScale(self: *const Monitor) !Scale {
     return .{ .x = x, .y = y };
 }
 
-pub fn getName(self: *const Monitor) []const u8 {
+pub fn getName(self: Monitor) []const u8 {
     const name = glfw.getMonitorName(self.impl);
     if (name == null) {
         @branchHint(.cold);
@@ -96,4 +96,12 @@ pub fn getName(self: *const Monitor) []const u8 {
         unreachable;
     }
     return name[0..std.mem.len(name)];
+}
+
+pub fn setUserPointer(self: Monitor, user_ptr: ?*anyopaque) void {
+    glfw.setMonitorUserPointer(self.impl, user_ptr);
+}
+
+pub fn getUserPointer(self: Monitor) ?*anyopaque {
+    return glfw.getMonitorUserPointer(self.impl);
 }
