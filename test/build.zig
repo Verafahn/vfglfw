@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const zglfw = b.dependency("zglfw", .{
+    const vfglfw = b.dependency("vfglfw", .{
         .target = target,
         .optimize = optimize,
     });
@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
         .link_libc = true,
         .imports = &.{
-            .{ .name = "ziglfw", .module = zglfw.module("ziglfw") },
+            .{ .name = "ziglfw", .module = vfglfw.module("vfglfw") },
             .{ .name = "zgl", .module = zgl.module("zgl") },
         },
     });

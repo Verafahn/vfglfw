@@ -33,7 +33,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     // Export module 'zglfw'.
-    const zglfw = b.addModule("ziglfw", .{
+    const zglfw = b.addModule("vfglfw", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,

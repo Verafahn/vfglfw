@@ -1,7 +1,7 @@
 .{
-    .name = .ziglfw,
+    .name = .vfglfw,
     .version = "0.3.0",
-    .fingerprint = 0x95a34f7821f6e609,
+    .fingerprint = 0x603118d21e563a4a,
     .minimum_zig_version = "0.16.0",
     .paths = .{
         "build.zig",
