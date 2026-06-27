@@ -109,7 +109,7 @@ pub fn main(init: std.process.Init) !void {
         } else if (std.mem.startsWith(u8, decl.name, "GLFW_") and decl.name.len > 5) {
             const subname = decl.name[5..];
             try writer.interface.print(
-                "pub const {s} = @as(c_int, glfw.{s});\n",
+                "pub const {s} = glfw.{s};\n",
                 .{
                     subname,
                     decl.name,
