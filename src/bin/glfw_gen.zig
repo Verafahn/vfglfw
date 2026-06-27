@@ -99,11 +99,10 @@ pub fn main(init: std.process.Init) !void {
         if (std.mem.startsWith(u8, decl.name, "glfw") and decl.name.len > 4) {
             const subname = decl.name[4..];
             try writer.interface.print(
-                "pub const {c}{s}: *const @TypeOf(glfw.{s}) = &glfw.{s};\n",
+                "pub const {c}{s} = glfw.{s};\n",
                 .{
                     std.ascii.toLower(subname[0]),
                     subname[1..],
-                    decl.name,
                     decl.name,
                 },
             );
