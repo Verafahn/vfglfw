@@ -109,7 +109,7 @@ pub fn enable_callback(self: *Window, config: EventConfig) void {
 fn when_key(this: ?*glfw.Window, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{ .key = .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{ .key = .{
             .key = @enumFromInt(key),
             .scancode = @intCast(scancode),
             .action = @enumFromInt(action),
@@ -120,7 +120,7 @@ fn when_key(this: ?*glfw.Window, key: c_int, scancode: c_int, action: c_int, mod
 fn when_char(this: ?*glfw.Window, char: c_uint) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .char = @intCast(char),
         });
     }
@@ -128,7 +128,7 @@ fn when_char(this: ?*glfw.Window, char: c_uint) callconv(.c) void {
 fn when_char_mods(this: ?*glfw.Window, char: c_uint, mods: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .char_mods = .{
                 .char = @intCast(char),
                 .mods = @bitCast(@as(u6, @intCast(mods))),
@@ -139,7 +139,7 @@ fn when_char_mods(this: ?*glfw.Window, char: c_uint, mods: c_int) callconv(.c) v
 fn when_mouse_button(this: ?*glfw.Window, button: c_int, action: c_int, mods: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .mouse_button = .{
                 .button = @enumFromInt(button),
                 .action = @enumFromInt(action),
@@ -151,7 +151,7 @@ fn when_mouse_button(this: ?*glfw.Window, button: c_int, action: c_int, mods: c_
 fn when_cursor_pos(this: ?*glfw.Window, x: f64, y: f64) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .cursor_pos = .{
                 .x = x,
                 .y = y,
@@ -162,7 +162,7 @@ fn when_cursor_pos(this: ?*glfw.Window, x: f64, y: f64) callconv(.c) void {
 fn when_cursor_enter(this: ?*glfw.Window, a: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .cursor_enter = a == glfw.TRUE,
         });
     }
@@ -170,7 +170,7 @@ fn when_cursor_enter(this: ?*glfw.Window, a: c_int) callconv(.c) void {
 fn when_scroll(this: ?*glfw.Window, xs: f64, ys: f64) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .scroll = .{
                 .x = xs,
                 .y = ys,
@@ -182,7 +182,7 @@ fn when_drop(this: ?*glfw.Window, count: c_int, path: [*c][*c]const u8) callconv
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
         if (count == 0) {
-            handle.vtable.handle(self.handle_impl.vptr, .{ .drop = &.{} });
+            handle.vtable.handle(self.handle_impl.?.vptr, .{ .drop = &.{} });
         }
         var buffer: [16 * 1024]u8 = undefined;
         var fixed_allocator = std.heap.FixedBufferAllocator.init(&buffer);
@@ -195,7 +195,7 @@ fn when_drop(this: ?*glfw.Window, count: c_int, path: [*c][*c]const u8) callconv
             std.mem.copyForwards(u8, paths[i], path[i][0..len]);
         }
 
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .drop = paths,
         });
     }
@@ -204,7 +204,7 @@ fn when_drop(this: ?*glfw.Window, count: c_int, path: [*c][*c]const u8) callconv
 fn when_pos(this: ?*glfw.Window, x: c_int, y: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .pos = .{
                 .x = x,
                 .y = y,
@@ -216,7 +216,7 @@ fn when_pos(this: ?*glfw.Window, x: c_int, y: c_int) callconv(.c) void {
 fn when_size(this: ?*glfw.Window, width: c_int, height: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .size = .{
                 .height = height,
                 .width = width,
@@ -228,21 +228,21 @@ fn when_size(this: ?*glfw.Window, width: c_int, height: c_int) callconv(.c) void
 fn when_close(this: ?*glfw.Window) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .close);
+        handle.vtable.handle(self.handle_impl.?.vptr, .close);
     }
 }
 
 fn when_refresh(this: ?*glfw.Window) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .refresh);
+        handle.vtable.handle(self.handle_impl.?.vptr, .refresh);
     }
 }
 
 fn when_focus(this: ?*glfw.Window, f: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .focus = f == glfw.TRUE,
         });
     }
@@ -251,7 +251,7 @@ fn when_focus(this: ?*glfw.Window, f: c_int) callconv(.c) void {
 fn when_iconify(this: ?*glfw.Window, i: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .iconify = i == glfw.TRUE,
         });
     }
@@ -260,7 +260,7 @@ fn when_iconify(this: ?*glfw.Window, i: c_int) callconv(.c) void {
 fn when_maximize(this: ?*glfw.Window, m: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .maximize = m == glfw.TRUE,
         });
     }
@@ -269,7 +269,7 @@ fn when_maximize(this: ?*glfw.Window, m: c_int) callconv(.c) void {
 fn when_frame_buffer_size(this: ?*glfw.Window, width: c_int, height: c_int) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .frame_buffer_size = .{
                 .height = height,
                 .width = width,
@@ -281,7 +281,7 @@ fn when_frame_buffer_size(this: ?*glfw.Window, width: c_int, height: c_int) call
 fn when_content_sacle(this: ?*glfw.Window, xs: f32, ys: f32) callconv(.c) void {
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.vptr, .{
+        handle.vtable.handle(self.handle_impl.?.vptr, .{
             .content_sacle = .{
                 .x = xs,
                 .y = ys,

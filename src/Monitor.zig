@@ -24,7 +24,7 @@ pub const Event = enum(@TypeOf(glfw.CONNECTED)) {
 fn when_callback(self: ?*glfw.Monitor, event: c_int) callconv(.c) void {
     const this: *Monitor = @ptrCast(@alignCast(glfw.getMonitorUserPointer(self)));
     if (this.handle) |handle| {
-        handle.vtable.callback(this.handle.vptr, @enumFromInt(event));
+        handle.vtable.callback(this.handle.?.vptr, @enumFromInt(event));
     }
 }
 
