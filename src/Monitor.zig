@@ -5,14 +5,14 @@ const Allocator = std.mem.Allocator;
 const types = @import("root.zig");
 
 impl: *glfw.Monitor,
-handle: Handle = .{},
+handle: ?Handle = null,
 
 pub const Handle = struct {
-    vptr: ?*anyopaque = null,
-    vtable: VTable = .{},
+    vptr: *anyopaque,
+    vtable: VTable,
 
     pub const VTable = struct {
-        callback: ?*const fn (?*anyopaque, event: Event) void = null,
+        callback: *const fn (*anyopaque, event: Event) void,
     };
 };
 
@@ -23,7 +23,9 @@ pub const Event = enum(@TypeOf(glfw.CONNECTED)) {
 
 fn when_callback(self: ?*glfw.Monitor, event: c_int) callconv(.c) void {
     const this: *Monitor = @ptrCast(@alignCast(glfw.getMonitorUserPointer(self)));
-    this.handle.vtable.callback(this.handle.vptr, @enumFromInt(event));
+    if (this.handle) |handle| {
+        handle.vtable.callback(this.handle.vptr, @enumFromInt(event));
+    }
 }
 
 pub fn setHandle(self: *Monitor, handle: Handle) void {

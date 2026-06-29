@@ -18,7 +18,7 @@ const Cursor = @import("Cursor.zig");
 const Handle = @import("Handle.zig");
 
 impl: *glfw.Window,
-handle_impl: Handle = .{},
+handle_impl: ?Handle = null,
 
 pub const ClientApi = enum(c_int) {
     opengl = glfw.OPENGL_API,
