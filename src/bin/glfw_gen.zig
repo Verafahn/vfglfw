@@ -86,7 +86,7 @@ pub fn main(init: std.process.Init) !void {
         \\pub const MonitorFun = glfw.GLFWmonitorfun;
         \\pub const JoystickFun = glfw.GLFWjoystickfun;
         \\pub const VidMode = glfw.GLFWvidmode;
-        \\pub const GammarAmp = glfw.GLFWgammaramp;
+        \\pub const GammaRamp = glfw.GLFWgammaramp;
         \\pub const Image = glfw.GLFWimage;
         \\pub const GamepadState = glfw.GLFWgamepadstate;
         \\pub const Allocator = glfw.GLFWallocator;

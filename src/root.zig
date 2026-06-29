@@ -257,13 +257,10 @@ pub fn hasVulkanSupport() bool {
 
 pub const getVersion = glfw.getVersion;
 pub const getVersionString = glfw.getVersionString;
-
 pub const setErrorCallback = glfw.setErrorCallback;
-pub const setMonitorCallback = glfw.setMonitorCallback;
 
-pub const getVideoModes = glfw.getVideoModes;
-pub const getVideoMode = glfw.getVideoMode;
-pub const setGamma = glfw.setGamma;
-pub const getGammaRamp = glfw.getGammaRamp;
-pub const setGammaRamp = glfw.setGammaRamp;
-pub const getRequiredInstanceExtensions = glfw.getRequiredInstanceExtensions;
+pub fn getRequiredInstanceExtensions() [][*c]const u8 {
+    var count: u32 = undefined;
+    const ret = glfw.getRequiredInstanceExtensions(&count);
+    return ret[0..count];
+}

@@ -44,5 +44,11 @@ pub fn build(b: *std.Build) !void {
             },
         },
     });
-    _ = vfglfw;
+    // _ = vfglfw;
+
+    const a = b.addLibrary(.{
+        .name = "a",
+        .root_module = vfglfw,
+    });
+    b.installArtifact(a);
 }

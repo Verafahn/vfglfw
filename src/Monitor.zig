@@ -5,6 +5,32 @@ const Allocator = std.mem.Allocator;
 const types = @import("root.zig");
 
 impl: *glfw.Monitor,
+handle: Handle = .{},
+
+pub const Handle = struct {
+    vptr: ?*anyopaque = null,
+    vtable: VTable = .{},
+
+    pub const VTable = struct {
+        callback: ?*const fn (?*anyopaque, event: Event) void,
+    };
+};
+
+pub const Event = enum(@TypeOf(glfw.CONNECTED)) {
+    connected = glfw.CONNECTED,
+    disconnected = glfw.DISCONNECTED,
+};
+
+fn when_callback(self: ?*glfw.Monitor, event: c_int) callconv(.c) void {
+    const this: *Monitor = @ptrCast(@alignCast(glfw.getMonitorUserPointer(self)));
+    this.handle.vtable.callback(this.handle.vptr, @enumFromInt(event));
+}
+
+pub fn setHandle(self: *Monitor, handle: Handle) void {
+    _ = glfw.setMonitorCallback(when_callback);
+    glfw.setMonitorUserPointer(self.impl, self);
+    self.handle = handle;
+}
 
 pub fn getPrimaryMonitor() ?Monitor {
     const monitor = glfw.getPrimaryMonitor();
@@ -98,10 +124,31 @@ pub fn getName(self: Monitor) []const u8 {
     return name[0..std.mem.len(name)];
 }
 
-pub fn setUserPointer(self: Monitor, user_ptr: ?*anyopaque) void {
-    glfw.setMonitorUserPointer(self.impl, user_ptr);
+pub fn getVideoModes(self: Monitor) []glfw.VidMode {
+    var count: c_int = undefined;
+    const ret = glfw.getVideoModes(self.impl, &count);
+    if (ret == null) {
+        glfw.check() catch unreachable;
+    }
+    return ret[0..@as(usize, count)];
 }
 
-pub fn getUserPointer(self: Monitor) ?*anyopaque {
-    return glfw.getMonitorUserPointer(self.impl);
+pub fn getVideoMode(self: Monitor) *const glfw.VidMode {
+    return @ptrCast(glfw.getVideoMode(self.impl));
+}
+
+pub fn setGamma(self: Monitor, gamma: f32) void {
+    glfw.setGamma(self.impl, gamma);
+}
+
+pub fn getGammaRamp(self: Monitor) *glfw.GammaRamp {
+    const ret = glfw.getGammaRamp(self.impl);
+    if (ret == null) {
+        try glfw.check();
+    }
+    return @ptrCast(ret);
+}
+
+pub fn setGammaRamp(self: Monitor, ramp: *glfw.GammaRamp) void {
+    glfw.setGammaRamp(self.impl, ramp);
 }
