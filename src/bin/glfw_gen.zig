@@ -10,7 +10,7 @@ pub fn main(init: std.process.Init) !void {
     }
 
     const output_file_path = args[1];
-    
+
     var file = try std.Io.Dir.cwd().createFile(io, output_file_path, .{});
     defer file.close(io);
 
@@ -96,8 +96,7 @@ pub fn main(init: std.process.Init) !void {
 
     const names = @typeInfo(glfw).@"struct".decl_names;
     for (names) |name| {
-        if (std.mem.startsWith(u8, name, "glfw") and name.len > 4) {
-            const subname = name[4..];
+        if (std.mem.cutPrefix(u8, name, "glfw")) |subname| {
             try writer.interface.print(
                 "pub const {c}{s} = glfw.{s};\n",
                 .{
@@ -106,8 +105,7 @@ pub fn main(init: std.process.Init) !void {
                     name,
                 },
             );
-        } else if (std.mem.startsWith(u8, name, "GLFW_") and name.len > 5) {
-            const subname = name[5..];
+        } else if (std.mem.cutPrefix(u8, name, "GLFW_")) |subname| {
             try writer.interface.print(
                 "pub const {s} = glfw.{s};\n",
                 .{
