@@ -2,5 +2,4 @@
 /zig-out
 /zig-pkg
 
-/.*
 !.gitignore
