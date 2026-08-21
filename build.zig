@@ -32,7 +32,7 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
-    // Export module 'zglfw'.
+    // Export module 'vfglfw'.
     const vfglfw = b.addModule("vfglfw", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
@@ -44,11 +44,31 @@ pub fn build(b: *std.Build) !void {
             },
         },
     });
-    // _ = vfglfw;
 
-    const a = b.addLibrary(.{
-        .name = "a",
-        .root_module = vfglfw,
-    });
-    b.installArtifact(a);
+    // use `-Duse_glfw_zig` to enable.
+    if (b.option(
+        bool,
+        "use_glfw_zig",
+        "If this parameter is specified, it will link to glfw.zig(https://github.com/tiawl/glfw.zig).",
+    ) orelse false) {
+        const glfw_zig = b.dependency("glfw_zig", .{});
+        vfglfw.linkLibrary(glfw_zig.artifact("glfw"));
+    }
+
+    {
+        const test_window = b.addExecutable(.{
+            .name = "test_window",
+            .root_module = b.createModule(.{
+                .target = target,
+                .optimize = optimize,
+                .root_source_file = b.path("test/window/main.zig"),
+                .imports = &.{
+                    .{ .name = "vfglfw", .module = vfglfw },
+                },
+            }),
+        });
+        const run_test_window = b.addRunArtifact(test_window);
+        const step_test_window = b.step("test_window", "Run test 'window'.");
+        step_test_window.dependOn(&run_test_window.step);
+    }
 }

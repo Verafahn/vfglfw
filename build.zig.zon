@@ -1,6 +1,13 @@
 .{
     .name = .vfglfw,
     .version = "0.1.0",
+    .dependencies = .{
+        .glfw_zig = .{
+            .url = "https://github.com/tiawl/glfw.zig/archive/refs/tags/vulkan.zig-v1.4.360.tar.gz",
+            .hash = "glfw_zig-1.0.0-NrvYowknGgDBwnOU1O9JV-BYaCyL1Scj1tT_NEXg6vxG",
+            .lazy = true,
+        },
+    },
     .fingerprint = 0x603118d21e563a4a,
     .minimum_zig_version = "0.17.0-dev.1818+7051f8e73",
     .paths = .{
