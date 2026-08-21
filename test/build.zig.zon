@@ -10,8 +10,8 @@
             .hash = "zgl-1.1.0-p_NpAD9FCgAY_XDO_EXxSGJ5-n9b3deO0V-9z9HJKYTQ",
         },
         .glfw_zig = .{
-            .url = "git+https://github.com/tiawl/glfw.zig.git#560890c772f9168d1ee78678c55fe9dbeb1cdd41",
-            .hash = "glfw_zig-1.0.0-NrvYo4nRGQCZby7yNo_dBtsmGzVEhMsV4-Fw29gWQq6L",
+            .url = "https://github.com/tiawl/glfw.zig/archive/refs/tags/vulkan.zig-v1.4.360.tar.gz",
+            .hash = "glfw_zig-1.0.0-NrvYowknGgDBwnOU1O9JV-BYaCyL1Scj1tT_NEXg6vxG",
         },
     },
     .fingerprint = 0x8c73652109023132,

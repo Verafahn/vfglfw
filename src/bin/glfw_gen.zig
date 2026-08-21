@@ -94,25 +94,25 @@ pub fn main(init: std.process.Init) !void {
         \\
     );
 
-    const decls = @typeInfo(glfw).@"struct".decls;
-    for (decls) |decl| {
-        if (std.mem.startsWith(u8, decl.name, "glfw") and decl.name.len > 4) {
-            const subname = decl.name[4..];
+    const names = @typeInfo(glfw).@"struct".decl_names;
+    for (names) |name| {
+        if (std.mem.startsWith(u8, name, "glfw") and name.len > 4) {
+            const subname = name[4..];
             try writer.interface.print(
                 "pub const {c}{s} = glfw.{s};\n",
                 .{
                     std.ascii.toLower(subname[0]),
                     subname[1..],
-                    decl.name,
+                    name,
                 },
             );
-        } else if (std.mem.startsWith(u8, decl.name, "GLFW_") and decl.name.len > 5) {
-            const subname = decl.name[5..];
+        } else if (std.mem.startsWith(u8, name, "GLFW_") and name.len > 5) {
+            const subname = name[5..];
             try writer.interface.print(
                 "pub const {s} = glfw.{s};\n",
                 .{
                     subname,
-                    decl.name,
+                    name,
                 },
             );
         }
