@@ -64,7 +64,7 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
-    try build_all_test(b, io);
+    try build_all_examples(b, io);
 }
 
 fn existFile(io: std.Io, dir: std.Io.Dir, file: []const u8) !bool {
@@ -75,14 +75,14 @@ fn existFile(io: std.Io, dir: std.Io.Dir, file: []const u8) !bool {
     return stat.kind == .file;
 }
 
-fn build_file_test(b: *std.Build, entry: std.Io.Dir.Entry) !void {
+fn build_file_examples(b: *std.Build, entry: std.Io.Dir.Entry) !void {
     if (std.mem.endsWith(u8, entry.name, ".zig")) {
         const prefix = entry.name[0 .. entry.name.len - 4];
         const exe = b.addExecutable(.{
             .name = prefix,
             .root_module = b.createModule(.{
                 .root_source_file = b.path(
-                    try b.allocator.print("test/{s}", .{entry.name}),
+                    try b.allocator.print("examples/{s}", .{entry.name}),
                 ),
                 .target = target,
                 .optimize = optimize,
@@ -93,30 +93,30 @@ fn build_file_test(b: *std.Build, entry: std.Io.Dir.Entry) !void {
         });
         const install = b.addInstallArtifact(exe, .{
             .dest_dir = .{
-                .override = .{ .custom = "test/" },
+                .override = .{ .custom = "examples/" },
             },
         });
         const run = b.addRunArtifact(exe);
         run.step.dependOn(&install.step);
         const step = b.step(
-            try b.allocator.print("test_{s}", .{prefix}),
-            try b.allocator.print("Run test program '{s}'.", .{entry.name}),
+            try b.allocator.print("exp_{s}", .{prefix}),
+            try b.allocator.print("Run examples program '{s}'.", .{entry.name}),
         );
         step.dependOn(&run.step);
     }
 }
 
-fn build_dir_test(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, io: std.Io) !void {
+fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, io: std.Io) !void {
     const program_dir = try dir.openDir(io, entry.name, .{});
     defer program_dir.close(io);
 
     if (try existFile(io, program_dir, "build.zig")) {
         const cmd = b.addSystemCommand(&.{ "zig", "build" });
         cmd.addPassthruArgs();
-        cmd.setCwd(b.path(try b.allocator.print("test/{s}", .{entry.name})));
+        cmd.setCwd(b.path(try b.allocator.print("examples/{s}", .{entry.name})));
         const step = b.step(
-            try b.allocator.print("test_{s}", .{entry.name}),
-            try b.allocator.print("Run test program '{s}'.", .{entry.name}),
+            try b.allocator.print("exp_{s}", .{entry.name}),
+            try b.allocator.print("Run example program '{s}'.", .{entry.name}),
         );
         step.dependOn(&cmd.step);
     } else if (try existFile(io, program_dir, "main.zig")) {
@@ -124,7 +124,7 @@ fn build_dir_test(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, io: s
             .name = entry.name,
             .root_module = b.createModule(.{
                 .root_source_file = b.path(
-                    try b.allocator.print("test/{s}/main.zig", .{entry.name}),
+                    try b.allocator.print("examples/{s}/main.zig", .{entry.name}),
                 ),
                 .target = target,
                 .optimize = optimize,
@@ -135,28 +135,28 @@ fn build_dir_test(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, io: s
         });
         const install = b.addInstallArtifact(exe, .{
             .dest_dir = .{
-                .override = .{ .custom = "test/" },
+                .override = .{ .custom = "examples/" },
             },
         });
         const run = b.addRunArtifact(exe);
         run.step.dependOn(&install.step);
         const step = b.step(
-            try b.allocator.print("test_{s}", .{entry.name}),
-            try b.allocator.print("Run test program '{s}'.", .{entry.name}),
+            try b.allocator.print("exp_{s}", .{entry.name}),
+            try b.allocator.print("Run example program '{s}'.", .{entry.name}),
         );
         step.dependOn(&run.step);
     }
 }
 
-fn build_all_test(b: *std.Build, io: std.Io) !void {
+fn build_all_examples(b: *std.Build, io: std.Io) !void {
     const dir = try b.root.openDir(io, "test/", .{ .iterate = true });
     defer dir.close(io);
 
     var iter = dir.iterate();
     while (try iter.next(io)) |entry|
         switch (entry.kind) {
-            .file => try build_file_test(b, entry),
-            .directory => try build_dir_test(b, dir, entry, io),
+            .file => try build_file_examples(b, entry),
+            .directory => try build_dir_examples(b, dir, entry, io),
             else => {},
         };
 }
