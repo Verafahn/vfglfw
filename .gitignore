@@ -2,4 +2,6 @@
 /zig-out
 /zig-pkg
 
-!.gitignore
+/examples/**/.zig-cache
+/examples/**/zig-out
+/examples/**/zig-pkg
