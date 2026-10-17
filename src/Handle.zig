@@ -110,9 +110,9 @@ fn when_key(this: ?*glfw.Window, key: c_int, scancode: c_int, action: c_int, mod
     const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
     if (self.handle_impl) |handle| {
         handle.vtable.handle(self.handle_impl.?.vptr, .{ .key = .{
-            .key = @enumFromInt(key),
+            .key = @fromBackingInt(@intCast(key)),
             .scancode = @intCast(scancode),
-            .action = @enumFromInt(action),
+            .action = @fromBackingInt(@intCast(action)),
             .mods = @bitCast(@as(u6, @intCast(mods))),
         } });
     }
@@ -141,8 +141,8 @@ fn when_mouse_button(this: ?*glfw.Window, button: c_int, action: c_int, mods: c_
     if (self.handle_impl) |handle| {
         handle.vtable.handle(self.handle_impl.?.vptr, .{
             .mouse_button = .{
-                .button = @enumFromInt(button),
-                .action = @enumFromInt(action),
+                .button = @fromBackingInt(@intCast(button)),
+                .action = @fromBackingInt(@intCast(action)),
                 .mods = @bitCast(@as(u6, @intCast(mods))),
             },
         });

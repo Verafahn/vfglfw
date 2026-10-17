@@ -43,7 +43,7 @@ pub const StandrandCursor = enum(c_int) {
 };
 
 pub fn createStandrad(cursor: StandrandCursor) error{CursorUnavailable}!Cursor {
-    const cur = glfw.createStandardCursor(@intFromEnum(cursor));
+    const cur = glfw.createStandardCursor(@backingInt(cursor));
     if (cur == null) {
         @branchHint(.cold);
         glfw.check() catch |err| switch (err) {

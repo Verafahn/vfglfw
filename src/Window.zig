@@ -283,10 +283,10 @@ fn windowHint(hint: Hint) void {
         glfw.windowHint(glfw.REFRESH_RATE, value);
     }
     if (hint.client_api) |client_api| {
-        glfw.windowHint(glfw.CLIENT_API, @intFromEnum(client_api));
+        glfw.windowHint(glfw.CLIENT_API, @backingInt(client_api));
     }
     if (hint.context_creation_api) |context_creation_api| {
-        glfw.windowHint(glfw.CLIENT_API, @intFromEnum(context_creation_api));
+        glfw.windowHint(glfw.CLIENT_API, @backingInt(context_creation_api));
     }
     if (hint.context_version_major) |context_version_major| {
         glfw.windowHint(glfw.CONTEXT_VERSION_MAJOR, @ptrCast(context_version_major));
@@ -295,13 +295,13 @@ fn windowHint(hint: Hint) void {
         glfw.windowHint(glfw.CONTEXT_VERSION_MINOR, @ptrCast(context_version_minor));
     }
     if (hint.context_robustness) |context_robustness| {
-        glfw.windowHint(glfw.CONTEXT_ROBUSTNESS, @intFromEnum(context_robustness));
+        glfw.windowHint(glfw.CONTEXT_ROBUSTNESS, @backingInt(context_robustness));
     }
     if (hint.context_release_behavior) |context_release_behavior| {
-        glfw.windowHint(glfw.CONTEXT_RELEASE_BEHAVIOR, @intFromEnum(context_release_behavior));
+        glfw.windowHint(glfw.CONTEXT_RELEASE_BEHAVIOR, @backingInt(context_release_behavior));
     }
     if (hint.opengl_profile) |opengl_profile| {
-        glfw.windowHint(glfw.OPENGL_PROFILE, @intFromEnum(opengl_profile));
+        glfw.windowHint(glfw.OPENGL_PROFILE, @backingInt(opengl_profile));
     }
     if (hint.cocoa_frame_name) |cocoa_frame_name| {
         glfw.windowHintString(glfw.COCOA_FRAME_NAME, @ptrCast(cocoa_frame_name));
@@ -642,11 +642,11 @@ pub fn getAttrib(self: Window, attrib: Attrib) AttribData {
         glfw.CONTEXT_VERSION_MINOR => |d| return .{ .context_version_minor = @intCast(d) },
         glfw.CONTEXT_REVISION => |d| return .{ .context_revision = @intCast(d) },
 
-        glfw.CLIENT_API => |e| return .{ .client_api = @enumFromInt(e) },
-        glfw.CONTEXT_CREATION_API => |e| return .{ .context_creation_api = @enumFromInt(e) },
-        glfw.OPENGL_PROFILE => |e| return .{ .opengl_profile = @enumFromInt(e) },
-        glfw.CONTEXT_RELEASE_BEHAVIOR => |e| return .{ .context_release_behavior = @enumFromInt(e) },
-        glfw.CONTEXT_ROBUSTNESS => |e| return .{ .context_robustness = @enumFromInt(e) },
+        glfw.CLIENT_API => |e| return .{ .client_api = @fromBackingInt(@intCast(e)) },
+        glfw.CONTEXT_CREATION_API => |e| return .{ .context_creation_api = @fromBackingInt(@intCast(e)) },
+        glfw.OPENGL_PROFILE => |e| return .{ .opengl_profile = @fromBackingInt(@intCast(e)) },
+        glfw.CONTEXT_RELEASE_BEHAVIOR => |e| return .{ .context_release_behavior = @fromBackingInt(@intCast(e)) },
+        glfw.CONTEXT_ROBUSTNESS => |e| return .{ .context_robustness = @fromBackingInt(@intCast(e)) },
         0 => {
             @branchHint(.cold);
             glfw.check() catch unreachable;
@@ -677,7 +677,7 @@ pub const SetAttrib = union(SetAttribType) {
 pub fn setAttrib(self: Window, attrib: SetAttrib) void {
     switch (attrib) {
         inline else => |a| {
-            glfw.setWindowAttrib(self.impl, @intFromEnum(attrib), a);
+            glfw.setWindowAttrib(self.impl, @backingInt(attrib), a);
         },
     }
 }
@@ -705,27 +705,27 @@ pub fn setIcon(self: Window, allocator: Allocator, images: []Image) error{
 }
 
 pub fn getInputMode(self: Window, mode: ModeType) Mode {
-    const glfw_mode = glfw.getInputMode(self.impl, @intFromEnum(mode));
+    const glfw_mode = glfw.getInputMode(self.impl, @backingInt(mode));
     switch (glfw_mode) {
-        .cursor => return @enumFromInt(glfw_mode),
+        .cursor => return @fromBackingInt(@intCast(glfw_mode)),
         else => return glfw_mode == glfw.TRUE,
     }
 }
 
 pub fn setInputMode(self: Window, mode: Mode) void {
     const value = switch (mode) {
-        .cursor => |m| @intFromEnum(m),
+        .cursor => |m| @backingInt(m),
         inline else => |a| if (a) glfw.TRUE else glfw.FALSE,
     };
-    glfw.setInputMode(self.impl, @intFromEnum(mode), value);
+    glfw.setInputMode(self.impl, @backingInt(mode), value);
 }
 
 pub fn getKey(self: Window, key: Key) State {
-    return @enumFromInt(glfw.getKey(self.impl, @intFromEnum(key)));
+    return @fromBackingInt(@intCast(glfw.getKey(self.impl, @backingInt(key))));
 }
 
 pub fn getMouseButton(self: Window, button: Button) State {
-    return @enumFromInt(glfw.getMouseButton(self.impl, @intFromEnum(button)));
+    return @fromBackingInt(@intCast(glfw.getMouseButton(self.impl, @backingInt(button))));
 }
 
 const fPos = types.f64Pos;

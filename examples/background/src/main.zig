@@ -34,7 +34,7 @@ pub fn main(init: std.process.Init) !void {
     var triangle: MyWindow = .{};
     window.setHandle(triangle.handle(), .{ .frame_buffer_size = true });
     window.makeContextCurrent();
-    
+
     if (glad.gladLoadGLLoader(@ptrCast(&glfw.getProcAddress)) == 0) {
         return error.LoadGLFailed;
     }

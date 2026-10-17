@@ -58,13 +58,13 @@ inline fn b(v: bool) @TypeOf(glfw.TRUE) {
 
 fn inithint(hint: Hint) void {
     if (hint.platform) |platform| {
-        glfw.initHint(glfw.PLATFORM, @intFromEnum(platform));
+        glfw.initHint(glfw.PLATFORM, @backingInt(platform));
     }
     if (hint.joystick_hat_buttons) |joystick_hat_buttons| {
         glfw.initHint(glfw.JOYSTICK_HAT_BUTTONS, b(joystick_hat_buttons));
     }
     if (hint.angle_platform_type) |angle_platform_type| {
-        glfw.initHint(glfw.ANGLE_PLATFORM_TYPE, @intFromEnum(angle_platform_type));
+        glfw.initHint(glfw.ANGLE_PLATFORM_TYPE, @backingInt(angle_platform_type));
     }
     if (hint.cocoa_chdir_resources) |cocoa_chdir_resources| {
         glfw.initHint(glfw.COCOA_CHDIR_RESOURCES, b(cocoa_chdir_resources));
@@ -73,7 +73,7 @@ fn inithint(hint: Hint) void {
         glfw.initHint(glfw.COCOA_MENUBAR, b(cocoa_menubar));
     }
     if (hint.wayland_libdecor) |wayland_libdecor| {
-        glfw.initHint(glfw.WAYLAND_LIBDECOR, @intFromEnum(wayland_libdecor));
+        glfw.initHint(glfw.WAYLAND_LIBDECOR, @backingInt(wayland_libdecor));
     }
     if (hint.x11_xcb_vulkan_surface) |x11_xcb_vulkan_surface| {
         glfw.initHint(glfw.X11_XCB_VULKAN_SURFACE, b(x11_xcb_vulkan_surface));
@@ -229,11 +229,11 @@ pub fn getPlatform() Platform {
         glfw.check() catch unreachable;
         unreachable;
     }
-    return @enumFromInt(p);
+    return @fromBackingInt(@intCast(p));
 }
 
 pub fn getPlatformSupport(platform: Platform) bool {
-    return glfw.platformSupported(@intFromEnum(platform)) == glfw.TRUE;
+    return glfw.platformSupported(@backingInt(platform)) == glfw.TRUE;
 }
 
 pub fn swapInterval(interval: u32) void {
