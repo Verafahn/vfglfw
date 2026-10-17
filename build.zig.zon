@@ -3,13 +3,16 @@
     .version = "0.1.0",
     .dependencies = .{
         .glfw_zig = .{
-            .url = "https://github.com/tiawl/glfw.zig/archive/refs/tags/vulkan.zig-v1.4.360.tar.gz",
-            .hash = "glfw_zig-1.0.0-NrvYowknGgDBwnOU1O9JV-BYaCyL1Scj1tT_NEXg6vxG",
-            .lazy = true,
+            .url = "https://github.com/tiawl/glfw.zig/archive/refs/tags/toolbox-2.3.0.tar.gz",
+            .hash = "glfw_zig-1.0.0-NrvYo0Y9GgCUwKJyfvWvV41_NDxETzQB-6Dwi-YqT2gt",
+        },
+        .translate_c = .{
+            .url = "https://codeberg.org/ziglang/translate-c/archive/2.0.2.tar.gz",
+            .hash = "translate_c-2.0.2-Q_BUWvBNBwBgPKQJPblip6M7AHNK_IPNPmyv4rSIQMQc",
         },
     },
     .fingerprint = 0x603118d21e563a4a,
-    .minimum_zig_version = "0.17.0-dev.1818+7051f8e73",
+    .minimum_zig_version = "0.17.0",
     .paths = .{
         "build.zig",
         "build.zig.zon",

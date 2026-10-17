@@ -1,5 +1,6 @@
 const std = @import("std");
-const glfw = @import("glfw3c");
+const glfw = @import("glfw3.h");
+
 pub fn main(init: std.process.Init) !void {
     const io = init.io;
     const allocator = init.arena.allocator();
@@ -20,7 +21,7 @@ pub fn main(init: std.process.Init) !void {
     try writer.interface.writeAll(
         \\//! This file generate by bin/glfw_gen.zig
         \\
-        \\const glfw = @import("glfw3c");
+        \\const glfw = @import("glfw3.h");
         \\
         \\pub const Error = error{
         \\    NoCurrentContext,
