@@ -28,9 +28,9 @@ pub const Triangle = struct {
 const vertex_shader = @embedFile("vertex");
 const fragment_shader = @embedFile("fragment");
 const vertices = [_]f32{
-    -0.5, -0.5, 0.0,
-    0.5,  -0.5, 0.0,
-    0.0,  0.5,  0.0,
+    -0.5, -0.5, 0.0, 1.0, 0.0, 0.0,
+    0.5,  -0.5, 0.0, 0.0, 1.0, 0.0,
+    0.0,  0.5,  0.0, 0.0, 0.0, 1.0,
 };
 
 pub fn main(init: std.process.Init) !void {
@@ -114,13 +114,22 @@ pub fn main(init: std.process.Init) !void {
     );
     glad.glVertexAttribPointer(
         0,
-        2,
+        3,
         glad.GL_FLOAT,
         glad.GL_FALSE,
-        3 * @sizeOf(f32),
+        6 * @sizeOf(f32),
         null,
     );
     glad.glEnableVertexAttribArray(0);
+    glad.glVertexAttribPointer(
+        1,
+        3,
+        glad.GL_FLOAT,
+        glad.GL_FALSE,
+        6 * @sizeOf(f32),
+        @ptrFromInt(3 * @sizeOf(f32)),
+    );
+    glad.glEnableVertexAttribArray(1);
     glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo);
     glad.glBindVertexArray(vao);
 

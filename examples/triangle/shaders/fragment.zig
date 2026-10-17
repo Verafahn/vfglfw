@@ -4,7 +4,13 @@ const frag_color = @extern(
         .name = "frag_color",
     },
 );
+const f_color = @extern(
+    *addrspace(.input) @Vector(3, f32),
+    .{
+        .name = "f_color",
+    },
+);
 
 export fn main() callconv(.{ .spirv_fragment = .{} }) void {
-    frag_color.* = .{ 1.0, 0.5, 0.2, 1.0 };
+    frag_color.* = .{ f_color.*[0], f_color.*[1], f_color.*[2], 0.0 };
 }
