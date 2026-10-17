@@ -40,6 +40,7 @@ pub fn main(init: std.process.Init) !void {
     var window = try glfw.Window.create(1600, 900, "triangle", .{
         .context_version_major = 4,
         .context_version_minor = 6,
+        .opengl_profile = .core,
     });
     defer window.destroy();
     var triangle: Triangle = .{};
