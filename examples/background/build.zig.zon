@@ -1,0 +1,20 @@
+.{
+    .name = .background,
+    .version = "0.1.0",
+    .fingerprint = 0xbc68b450359edfcb,
+    .minimum_zig_version = "0.17.0",
+    .dependencies = .{
+        .glad = .{
+            .path = "../glad",
+        },
+        .vfglfw = .{
+            .path = "../../",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "LICENSE",
+    },
+}
