@@ -17,8 +17,9 @@ pub fn main(init: std.process.Init) !void {
 
     var buffer: [64]u8 = undefined;
     var writer = file.writer(io, &buffer);
+    const w = &writer.interface;
 
-    try writer.interface.writeAll(
+    try w.writeAll(
         \\//! This file generate by bin/glfw_gen.zig
         \\
         \\const glfw = @import("glfw3.h");
@@ -98,7 +99,7 @@ pub fn main(init: std.process.Init) !void {
     const names = @typeInfo(glfw).@"struct".decl_names;
     for (names) |name| {
         if (std.mem.cutPrefix(u8, name, "glfw")) |subname| {
-            try writer.interface.print(
+            try w.print(
                 "pub const {c}{s} = glfw.{s};\n",
                 .{
                     std.ascii.toLower(subname[0]),
@@ -107,7 +108,7 @@ pub fn main(init: std.process.Init) !void {
                 },
             );
         } else if (std.mem.cutPrefix(u8, name, "GLFW_")) |subname| {
-            try writer.interface.print(
+            try w.print(
                 "pub const {s} = glfw.{s};\n",
                 .{
                     subname,
@@ -117,5 +118,5 @@ pub fn main(init: std.process.Init) !void {
         }
     }
 
-    try writer.interface.flush();
+    try w.flush();
 }
