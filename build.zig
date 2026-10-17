@@ -97,6 +97,7 @@ fn build_file_examples(b: *std.Build, entry: std.Io.Dir.Entry) !void {
             },
         });
         const run = b.addRunArtifact(exe);
+        run.addPassthruArgs();
         run.step.dependOn(&install.step);
         const step = b.step(
             try b.allocator.print("exp_{s}", .{prefix}),
@@ -139,6 +140,7 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
             },
         });
         const run = b.addRunArtifact(exe);
+        run.addPassthruArgs();
         run.step.dependOn(&install.step);
         const step = b.step(
             try b.allocator.print("exp_{s}", .{entry.name}),
@@ -149,7 +151,8 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
 }
 
 fn build_all_examples(b: *std.Build, io: std.Io) !void {
-    const dir = try b.root.openDir(io, "test/", .{ .iterate = true });
+    b.dependOnDirectoryContents(b.path("examples/"));
+    const dir = try b.root.openDir(io, "examples/", .{ .iterate = true });
     defer dir.close(io);
 
     var iter = dir.iterate();

@@ -6,7 +6,7 @@ pub fn main(init: std.process.Init) !void {
     try glfw.init(init.gpa, .{});
     defer glfw.deinit();
 
-    var window = try glfw.Window.create(1600, 900, "test_window", .{});
+    var window = try glfw.Window.create(1600, 900, "expample_window", .{});
     defer window.destroy();
 
     // Event loop.
