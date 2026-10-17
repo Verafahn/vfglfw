@@ -29,27 +29,7 @@ pub fn build(b: *std.Build) !void {
     });
     glfw3_h_mod = glfw3_h.mod;
 
-    const glfw_gen = b.addExecutable(.{
-        .name = "glfw_gen",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("tools/gen/glfw_gen.zig"),
-            .target = target,
-            .optimize = optimize,
-            .imports = &.{
-                .{ .name = "glfw3.h", .module = glfw3_h_mod },
-            },
-        }),
-    });
-    const glfw_gen_run = b.addRunArtifact(glfw_gen);
-    const path = glfw_gen_run.addOutputFileArg("glfw3.zig");
-    glfw3_mod = b.createModule(.{
-        .root_source_file = path,
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
-            .{ .name = "glfw3.h", .module = glfw3_h_mod },
-        },
-    });
+    glfw3_mod = createGlfw3Mod(b);
 
     if (b.option(bool, "link_glfw", "") orelse false) {
         glfw3_mod.linkLibrary(glfw_zig.artifact("glfw"));
@@ -65,6 +45,30 @@ pub fn build(b: *std.Build) !void {
     });
 
     try build_all_examples(b, io);
+}
+
+fn createGlfw3Mod(b: *std.Build) *std.Build.Module {
+    const glfw_gen = b.addExecutable(.{
+        .name = "glfw_gen",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("tools/gen/glfw_gen.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "glfw3.h", .module = glfw3_h_mod },
+            },
+        }),
+    });
+    const glfw_gen_run = b.addRunArtifact(glfw_gen);
+    const path = glfw_gen_run.addOutputFileArg("glfw3.zig");
+    return b.createModule(.{
+        .root_source_file = path,
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "glfw3.h", .module = glfw3_h_mod },
+        },
+    });
 }
 
 fn existFile(io: std.Io, dir: std.Io.Dir, file: []const u8) !bool {
