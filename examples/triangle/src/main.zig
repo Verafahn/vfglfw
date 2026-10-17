@@ -37,7 +37,10 @@ pub fn main(init: std.process.Init) !void {
     try glfw.init(init.gpa, .{});
     defer glfw.deinit();
 
-    var window = try glfw.Window.create(1600, 900, "triangle", .{});
+    var window = try glfw.Window.create(1600, 900, "triangle", .{
+        .context_version_major = 4,
+        .context_version_minor = 6,
+    });
     defer window.destroy();
     var triangle: Triangle = .{};
     window.setHandle(triangle.handle(), .{ .frame_buffer_size = true });

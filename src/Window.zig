@@ -178,14 +178,14 @@ fn windowHint(hint: Hint) void {
 
     if (hint.position_x) |position_x| {
         const value = switch (position_x) {
-            .any => glfw.ANY_POSITION,
+            .any => @as(c_int, @bitCast(glfw.ANY_POSITION)),
             .pos => |pos| @as(c_int, @intCast(pos)),
         };
         glfw.windowHint(glfw.POSITION_X, value);
     }
     if (hint.position_y) |position_y| {
         const value = switch (position_y) {
-            .any => glfw.ANY_POSITION,
+            .any => @as(c_int, @bitCast(glfw.ANY_POSITION)),
             .pos => |pos| @as(c_int, @intCast(pos)),
         };
         glfw.windowHint(glfw.POSITION_Y, value);
@@ -203,35 +203,35 @@ fn windowHint(hint: Hint) void {
             .dont_care => glfw.DONT_CARE,
             .bits => |bits| @as(c_int, @intCast(bits)),
         };
-        glfw.windowHint(glfw.GREEN_BITSRED_BITS, value);
+        glfw.windowHint(glfw.GREEN_BITS, value);
     }
     if (hint.blue_bits) |blue_bits| {
         const value = switch (blue_bits) {
             .dont_care => glfw.DONT_CARE,
             .bits => |bits| @as(c_int, @intCast(bits)),
         };
-        glfw.windowHint(glfw.BLUE_BITSRED_BITS, value);
+        glfw.windowHint(glfw.BLUE_BITS, value);
     }
     if (hint.alpha_bits) |alpha_bits| {
         const value = switch (alpha_bits) {
             .dont_care => glfw.DONT_CARE,
             .bits => |bits| @as(c_int, @intCast(bits)),
         };
-        glfw.windowHint(glfw.ALPHA_BITSRED_BITS, value);
+        glfw.windowHint(glfw.ALPHA_BITS, value);
     }
     if (hint.depth_bits) |depth_bits| {
         const value = switch (depth_bits) {
             .dont_care => glfw.DONT_CARE,
             .bits => |bits| @as(c_int, @intCast(bits)),
         };
-        glfw.windowHint(glfw.DEPTH_BITSRED_BITS, value);
+        glfw.windowHint(glfw.DEPTH_BITS, value);
     }
     if (hint.stencil_bits) |stencil_bits| {
         const value = switch (stencil_bits) {
             .dont_care => glfw.DONT_CARE,
             .bits => |bits| @as(c_int, @intCast(bits)),
         };
-        glfw.windowHint(glfw.STENCIL_BITSRED_BITS, value);
+        glfw.windowHint(glfw.STENCIL_BITS, value);
     }
     if (hint.accum_red_bits) |accum_red_bits| {
         const value = switch (accum_red_bits) {
@@ -289,10 +289,10 @@ fn windowHint(hint: Hint) void {
         glfw.windowHint(glfw.CLIENT_API, @backingInt(context_creation_api));
     }
     if (hint.context_version_major) |context_version_major| {
-        glfw.windowHint(glfw.CONTEXT_VERSION_MAJOR, @ptrCast(context_version_major));
+        glfw.windowHint(glfw.CONTEXT_VERSION_MAJOR, @as(c_int, context_version_major));
     }
     if (hint.context_version_minor) |context_version_minor| {
-        glfw.windowHint(glfw.CONTEXT_VERSION_MINOR, @ptrCast(context_version_minor));
+        glfw.windowHint(glfw.CONTEXT_VERSION_MINOR, @as(c_int, context_version_minor));
     }
     if (hint.context_robustness) |context_robustness| {
         glfw.windowHint(glfw.CONTEXT_ROBUSTNESS, @backingInt(context_robustness));
@@ -328,7 +328,7 @@ pub const WindowError = error{
 pub fn create(width: u32, height: u32, title: []const u8, hint: Hint) WindowError!Window {
     const monitor = if (hint.monitor) |monitor| monitor.impl else null;
     const share = if (hint.share) |share| share.impl else null;
-
+    windowHint(hint);
     const impl = glfw.createWindow(
         @intCast(width),
         @intCast(height),
