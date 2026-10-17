@@ -2,7 +2,6 @@ const frag_color = @extern(
     *addrspace(.output) @Vector(4, f32),
     .{
         .name = "frag_color",
-        .decoration = .{ .location = 0 },
     },
 );
 
