@@ -105,7 +105,7 @@ fn build_file_examples(b: *std.Build, entry: std.Io.Dir.Entry) !void {
         run.step.dependOn(&install.step);
         const step = b.step(
             try b.allocator.print("exp_{s}", .{prefix}),
-            try b.allocator.print("Run examples program '{s}'.", .{entry.name}),
+            try b.allocator.print("Run example program '{s}'.", .{entry.name}),
         );
         step.dependOn(&run.step);
     }
@@ -118,6 +118,14 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
     if (try existFile(io, program_dir, "build.zig")) {
         const cmd = b.addSystemCommand(&.{ "zig", "build" });
         cmd.addPassthruArgs();
+        cmd.addArg("--cache-dir");
+        cmd.addDirectoryArg2(b.path(
+            try b.allocator.print(".zig-cache/examples/{s}/.zig-cache", .{entry.name}),
+        ), .{});
+        cmd.addArg("--prefix");
+        cmd.addDirectoryArg2(b.path(
+            try b.allocator.print("zig-out/examples/{s}/zig-out", .{entry.name}),
+        ), .{});
         cmd.setCwd(b.path(try b.allocator.print("examples/{s}", .{entry.name})));
         const step = b.step(
             try b.allocator.print("exp_{s}", .{entry.name}),
