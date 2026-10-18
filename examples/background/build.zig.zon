@@ -7,10 +7,6 @@
         .vfglfw = .{
             .path = "../../",
         },
-        .glad = .{
-            .url = "git+https://github.com/Verafahn/vfglad.git#6a4b82392525714ce1daa883bb04f1486acd79e8",
-            .hash = "glad-4.6.0-kf9VEnvZBgCcsVRM9bRB9g_J2qViydhEnMgQWSKnJzFl",
-        },
     },
     .paths = .{
         "build.zig",

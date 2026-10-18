@@ -1,6 +1,6 @@
 const std = @import("std");
 const glfw = @import("vfglfw");
-const glad = @import("glad");
+const gl = glfw.gl;
 const Event = glfw.Handle.Event;
 
 pub const MyWindow = struct {
@@ -18,7 +18,7 @@ pub const MyWindow = struct {
         _ = this;
         switch (event) {
             .frame_buffer_size => |size| {
-                glad.glViewport(0, 0, size.width, size.height);
+                gl.viewport(0, 0, size.width, size.height);
             },
             else => {},
         }
@@ -35,14 +35,14 @@ pub fn main(init: std.process.Init) !void {
     window.setHandle(triangle.handle(), .{ .frame_buffer_size = true });
     window.makeContextCurrent();
 
-    if (glad.gladLoadGLLoader(@ptrCast(&glfw.getProcAddress)) == 0) {
+    if (gl.loadGLLoader(@ptrCast(&glfw.getProcAddress)) == 0) {
         return error.LoadGLFailed;
     }
 
-    glad.glViewport(0, 0, 1600, 900);
+    gl.viewport(0, 0, 1600, 900);
     while (!window.shouldClose()) {
-        glad.glClearColor(0.2, 0.3, 0.3, 1.0);
-        glad.glClear(glad.GL_COLOR_BUFFER_BIT);
+        gl.clearColor(0.2, 0.3, 0.3, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
 
         window.swapBuffer();
         glfw.event.poll();

@@ -1,6 +1,5 @@
 const std = @import("std");
 const Translator = @import("translate_c").Translator;
-const glad = @import("glad");
 
 var target: std.Build.ResolvedTarget = undefined;
 var optimize: std.builtin.Optimize = undefined;
@@ -10,16 +9,11 @@ var vfglfw: *std.Build.Dependency = undefined;
 pub fn build(b: *std.Build) !void {
     target = b.standardTargetOptions(.{});
     optimize = b.standardOptimizeOption(.{});
-    glad_mod = glad.gladModule(
-        b,
-        b.dependency("glad", .{}),
-        target,
-        optimize,
-    );
     vfglfw = b.dependency("vfglfw", .{
         .target = target,
         .optimize = optimize,
         .link_glfw = true,
+        .use_gl = true,
     });
 
     const exe = b.addExecutable(.{
@@ -30,7 +24,6 @@ pub fn build(b: *std.Build) !void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "vfglfw", .module = vfglfw.module("vfglfw") },
-                .{ .name = "glad", .module = glad_mod },
             },
         }),
     });

@@ -19,6 +19,7 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
     translate_c = b.dependency("translate_c", .{});
+    const use_gl = b.option(bool, "use_gl", "") orelse false;
 
     const glfw3_h: Translator = .init(translate_c, .{
         .c_source_file = glfw_zig.path("glfw/include/GLFW/glfw3.h"),
@@ -41,6 +42,13 @@ pub fn build(b: *std.Build) !void {
             .{ .name = "glfw3", .module = glfw3_mod },
         },
     });
+    const option = std.Build.Step.Options.create(b);
+    option.addOption(bool, "enable_gl", use_gl);
+    vfglfw_mod.addOptions("use_gl", option);
+    if (use_gl) {
+        const glad = b.dependency("vfglad", .{});
+        vfglfw_mod.addImport("glad", glad.module("glad"));
+    }
 
     try build_all_examples(b, io);
 }

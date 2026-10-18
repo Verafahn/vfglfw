@@ -10,6 +10,11 @@
             .url = "https://codeberg.org/ziglang/translate-c/archive/2.0.2.tar.gz",
             .hash = "translate_c-2.0.2-Q_BUWvBNBwBgPKQJPblip6M7AHNK_IPNPmyv4rSIQMQc",
         },
+        .vfglad = .{
+            .url = "git+https://github.com/Verafahn/vfglad.git#f6266717a95ae0c8d1ec38d7565ec15a71fac8a0",
+            .hash = "vfglad-0.1.0-GcigqhngBgBLNOzMVygSkIoUO_sU_CYwTkpM5uLaGFiI",
+            .lazy = true,
+        },
     },
     .fingerprint = 0x603118d21e563a4a,
     .minimum_zig_version = "0.17.0",

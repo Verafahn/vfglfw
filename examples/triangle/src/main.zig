@@ -1,6 +1,6 @@
 const std = @import("std");
 const glfw = @import("vfglfw");
-const glad = @import("glad");
+const gl = glfw.gl;
 const Event = glfw.Handle.Event;
 
 pub const Triangle = struct {
@@ -18,7 +18,7 @@ pub const Triangle = struct {
         _ = this;
         switch (event) {
             .frame_buffer_size => |size| {
-                glad.glViewport(0, 0, size.width, size.height);
+                gl.viewport(0, 0, size.width, size.height);
             },
             else => {},
         }
@@ -46,21 +46,21 @@ pub fn main(init: std.process.Init) !void {
     var triangle: Triangle = .{};
     window.setHandle(triangle.handle(), .{ .frame_buffer_size = true });
     window.makeContextCurrent();
-    if (glad.gladLoadGLLoader(@ptrCast(&glfw.getProcAddress)) == 0) {
+    if (gl.loadGLLoader(@ptrCast(&glfw.getProcAddress)) == 0) {
         return error.LoadGLFailed;
     }
-    glad.glViewport(0, 0, 1600, 900);
+    gl.viewport(0, 0, 1600, 900);
 
-    const vshader = glad.glCreateShader(glad.GL_VERTEX_SHADER);
-    defer glad.glDeleteShader(vshader);
-    glad.glShaderBinary(
+    const vshader = gl.createShader(gl.VERTEX_SHADER);
+    defer gl.deleteShader(vshader);
+    gl.shaderBinary(
         1,
         &vshader,
-        glad.GL_SHADER_BINARY_FORMAT_SPIR_V,
+        gl.SHADER_BINARY_FORMAT_SPIR_V,
         vertex_shader,
         vertex_shader.len,
     );
-    glad.glSpecializeShader(
+    gl.specializeShader(
         vshader,
         "main",
         0,
@@ -69,81 +69,81 @@ pub fn main(init: std.process.Init) !void {
     );
     var success: c_int = undefined;
     var infolog: [512]u8 = undefined;
-    glad.glGetShaderiv(vshader, glad.GL_COMPILE_STATUS, &success);
+    gl.getShaderiv(vshader, gl.COMPILE_STATUS, &success);
     if (success == 0) {
-        glad.glGetShaderInfoLog(vshader, 512, null, &infolog);
+        gl.getShaderInfoLog(vshader, 512, null, &infolog);
         std.debug.print("{any}\n", .{infolog});
         return error.Vertex;
     }
 
-    const fshader = glad.glCreateShader(glad.GL_FRAGMENT_SHADER);
-    defer glad.glDeleteShader(fshader);
-    glad.glShaderBinary(
+    const fshader = gl.createShader(gl.FRAGMENT_SHADER);
+    defer gl.deleteShader(fshader);
+    gl.shaderBinary(
         1,
         &fshader,
-        glad.GL_SHADER_BINARY_FORMAT_SPIR_V,
+        gl.SHADER_BINARY_FORMAT_SPIR_V,
         fragment_shader,
         fragment_shader.len,
     );
-    glad.glSpecializeShader(
+    gl.specializeShader(
         fshader,
         "main",
         0,
         null,
         null,
     );
-    glad.glGetShaderiv(fshader, glad.GL_COMPILE_STATUS, &success);
+    gl.getShaderiv(fshader, gl.COMPILE_STATUS, &success);
     if (success == 0) {
-        glad.glGetShaderInfoLog(vshader, 512, null, &infolog);
+        gl.getShaderInfoLog(vshader, 512, null, &infolog);
         std.debug.print("{any}\n", .{infolog});
         return error.Fragment;
     }
 
-    const program = glad.glCreateProgram();
-    glad.glAttachShader(program, vshader);
-    glad.glAttachShader(program, fshader);
-    glad.glLinkProgram(program);
+    const program = gl.createProgram();
+    gl.attachShader(program, vshader);
+    gl.attachShader(program, fshader);
+    gl.linkProgram(program);
 
     var vao: c_uint = undefined;
     var vbo: c_uint = undefined;
-    glad.glGenVertexArrays(1, &vao);
-    glad.glGenBuffers(1, &vbo);
-    glad.glBindVertexArray(vao);
-    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo);
-    glad.glBufferData(
-        glad.GL_ARRAY_BUFFER,
+    gl.genVertexArrays(1, &vao);
+    gl.genBuffers(1, &vbo);
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bufferData(
+        gl.ARRAY_BUFFER,
         @sizeOf(@TypeOf(vertices)),
         &vertices,
-        glad.GL_STATIC_DRAW,
+        gl.STATIC_DRAW,
     );
-    glad.glVertexAttribPointer(
+    gl.vertexAttribPointer(
         0,
         3,
-        glad.GL_FLOAT,
-        glad.GL_FALSE,
+        gl.FLOAT,
+        gl.FALSE,
         6 * @sizeOf(f32),
         null,
     );
-    glad.glEnableVertexAttribArray(0);
-    glad.glVertexAttribPointer(
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(
         1,
         3,
-        glad.GL_FLOAT,
-        glad.GL_FALSE,
+        gl.FLOAT,
+        gl.FALSE,
         6 * @sizeOf(f32),
         @ptrFromInt(3 * @sizeOf(f32)),
     );
-    glad.glEnableVertexAttribArray(1);
-    glad.glBindBuffer(glad.GL_ARRAY_BUFFER, vbo);
-    glad.glBindVertexArray(vao);
+    gl.enableVertexAttribArray(1);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bindVertexArray(vao);
 
     while (!window.shouldClose()) {
-        glad.glClearColor(0.2, 0.3, 0.3, 1.0);
-        glad.glClear(glad.GL_COLOR_BUFFER_BIT);
+        gl.clearColor(0.2, 0.3, 0.3, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
 
-        glad.glUseProgram(program);
-        glad.glBindVertexArray(vao);
-        glad.glDrawArrays(glad.GL_TRIANGLES, 0, 3);
+        gl.useProgram(program);
+        gl.bindVertexArray(vao);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
 
         window.swapBuffer();
         glfw.event.poll();

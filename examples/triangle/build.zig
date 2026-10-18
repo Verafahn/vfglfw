@@ -20,6 +20,7 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
         .link_glfw = true,
+        .use_gl = true,
     });
     const opengl_target = b.resolveTargetQuery(.{
         .cpu_arch = .spirv32,

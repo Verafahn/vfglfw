@@ -1,6 +1,11 @@
 const glfw = @import("glfw3");
 const std = @import("std");
 
+pub const gl =
+    if (@import("use_gl").enable_gl)
+        @import("glad")
+    else
+        @compileError("Use '-Duse_gl' to enable it.");
 pub const Window = @import("Window.zig");
 pub const Monitor = @import("Monitor.zig");
 pub const input = @import("input.zig");
