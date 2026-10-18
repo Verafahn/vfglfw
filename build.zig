@@ -10,9 +10,7 @@ var glfw3_mod: *std.Build.Module = undefined;
 var vfglfw_mod: *std.Build.Module = undefined;
 
 pub fn build(b: *std.Build) !void {
-    var io_impl: std.Io.Threaded = .init(b.allocator, .{});
-    defer io_impl.deinit();
-    const io = io_impl.io();
+    const io = b.graph.io;
 
     target = b.standardTargetOptions(.{});
     optimize = b.standardOptimizeOption(.{});
@@ -52,8 +50,8 @@ fn createGlfw3Mod(b: *std.Build) *std.Build.Module {
         .name = "glfw_gen",
         .root_module = b.createModule(.{
             .root_source_file = b.path("tools/gen/glfw_gen.zig"),
-            .target = target,
-            .optimize = optimize,
+            .target = b.graph.host,
+            .optimize = .safe,
             .imports = &.{
                 .{ .name = "glfw3.h", .module = glfw3_h_mod },
             },
@@ -120,11 +118,11 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
         cmd.addPassthruArgs();
         cmd.addArg("--cache-dir");
         cmd.addDirectoryArg2(b.path(
-            try b.allocator.print(".zig-cache/examples/{s}/.zig-cache", .{entry.name}),
+            try b.allocator.print(".zig-cache/examples/{s}", .{entry.name}),
         ), .{});
         cmd.addArg("--prefix");
         cmd.addDirectoryArg2(b.path(
-            try b.allocator.print("zig-out/examples/{s}/zig-out", .{entry.name}),
+            try b.allocator.print("zig-out/examples/{s}", .{entry.name}),
         ), .{});
         cmd.setCwd(b.path(try b.allocator.print("examples/{s}", .{entry.name})));
         const step = b.step(
