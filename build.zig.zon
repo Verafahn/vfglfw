@@ -1,6 +1,6 @@
 .{
     .name = .vfglfw,
-    .version = "0.1.0",
+    .version = "0.2.0",
     .dependencies = .{
         .glfw_zig = .{
             .url = "https://github.com/tiawl/glfw.zig/archive/refs/tags/toolbox-2.3.0.tar.gz",
