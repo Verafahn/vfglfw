@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) !void {
         .optimize = optimize,
     });
     translate_c = b.dependency("translate_c", .{});
-    const use_gl = b.option(bool, "use_gl", "") orelse false;
+    const use_gl = b.option(bool, "use_gl", "") orelse b.isRoot();
 
     const glfw3_h: Translator = .init(translate_c, .{
         .c_source_file = glfw_zig.path("glfw/include/GLFW/glfw3.h"),
@@ -50,6 +50,7 @@ pub fn build(b: *std.Build) !void {
         vfglfw_mod.addImport("glad", glad.module("glad"));
     }
 
+    b.dependOnDirectoryContents(b.path("examples/"));
     try build_all_examples(b, io);
 }
 
@@ -86,35 +87,34 @@ fn existFile(io: std.Io, dir: std.Io.Dir, file: []const u8) !bool {
 }
 
 fn build_file_examples(b: *std.Build, entry: std.Io.Dir.Entry) !void {
-    if (std.mem.endsWith(u8, entry.name, ".zig")) {
-        const prefix = entry.name[0 .. entry.name.len - 4];
-        const exe = b.addExecutable(.{
-            .name = prefix,
-            .root_module = b.createModule(.{
-                .root_source_file = b.path(
-                    try b.allocator.print("examples/{s}", .{entry.name}),
-                ),
-                .target = target,
-                .optimize = optimize,
-                .imports = &.{
-                    .{ .name = "vfglfw", .module = vfglfw_mod },
-                },
-            }),
-        });
-        const install = b.addInstallArtifact(exe, .{
-            .dest_dir = .{
-                .override = .{ .custom = "examples/" },
+    if (!std.mem.endsWith(u8, entry.name, ".zig")) return;
+    const prefix = entry.name[0 .. entry.name.len - 4];
+    const exe = b.addExecutable(.{
+        .name = prefix,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path(
+                try b.allocator.print("examples/{s}", .{entry.name}),
+            ),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "vfglfw", .module = vfglfw_mod },
             },
-        });
-        const run = b.addRunArtifact(exe);
-        run.addPassthruArgs();
-        run.step.dependOn(&install.step);
-        const step = b.step(
-            try b.allocator.print("exp_{s}", .{prefix}),
-            try b.allocator.print("Run example program '{s}'.", .{entry.name}),
-        );
-        step.dependOn(&run.step);
-    }
+        }),
+    });
+    const install = b.addInstallArtifact(exe, .{
+        .dest_dir = .{
+            .override = .{ .custom = "examples/" },
+        },
+    });
+    const run = b.addRunArtifact(exe);
+    run.addPassthruArgs();
+    run.step.dependOn(&install.step);
+    const step = b.step(
+        try b.allocator.print("exp-{s}", .{prefix}),
+        try b.allocator.print("Run example program '{s}'.", .{entry.name}),
+    );
+    step.dependOn(&run.step);
 }
 
 fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, io: std.Io) !void {
@@ -134,7 +134,7 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
         ), .{});
         cmd.setCwd(b.path(try b.allocator.print("examples/{s}", .{entry.name})));
         const step = b.step(
-            try b.allocator.print("exp_{s}", .{entry.name}),
+            try b.allocator.print("exp-{s}", .{entry.name}),
             try b.allocator.print("Run example program '{s}'.", .{entry.name}),
         );
         step.dependOn(&cmd.step);
@@ -161,7 +161,7 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
         run.addPassthruArgs();
         run.step.dependOn(&install.step);
         const step = b.step(
-            try b.allocator.print("exp_{s}", .{entry.name}),
+            try b.allocator.print("exp-{s}", .{entry.name}),
             try b.allocator.print("Run example program '{s}'.", .{entry.name}),
         );
         step.dependOn(&run.step);
@@ -169,7 +169,6 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
 }
 
 fn build_all_examples(b: *std.Build, io: std.Io) !void {
-    b.dependOnDirectoryContents(b.path("examples/"));
     const dir = try b.root.openDir(io, "examples/", .{ .iterate = true });
     defer dir.close(io);
 

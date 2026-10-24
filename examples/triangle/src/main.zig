@@ -1,6 +1,6 @@
 const std = @import("std");
 const glfw = @import("vfglfw");
-const gl = glfw.gl;
+const gl = glfw.gl.gl;
 const Event = glfw.Handle.Event;
 
 pub const Triangle = struct {

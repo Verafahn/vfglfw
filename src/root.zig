@@ -3,7 +3,7 @@ const std = @import("std");
 
 pub const gl =
     if (@import("use_gl").enable_gl)
-        @import("glad")
+        @import("gl/root.zig")
     else
         @compileError("Use '-Duse_gl' to enable it.");
 pub const Window = @import("Window.zig");
