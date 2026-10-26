@@ -1,12 +1,12 @@
 const Handle = @This();
 const glfw = @import("glfw3");
-const Window = @import("Window.zig");
 const input = @import("input.zig");
+const std = @import("std");
+
 const Key = input.Key;
 const Action = input.Action;
-const Modify = input.Modify;
+const Modifiers = input.Modifiers;
 const Button = input.MouseButton;
-const std = @import("std");
 
 vptr: *anyopaque,
 vtable: VTable,
@@ -19,28 +19,29 @@ pub const Event = union(enum) {
     focus: bool,
     iconify: bool,
     maximize: bool,
-    frame_buffer_size: struct { width: i32, height: i32 },
-    content_sacle: struct { x: f32, y: f32 },
+    framebuffer_size: struct { width: i32, height: i32 },
+    content_scale: struct { x: f32, y: f32 },
     key: struct {
         key: Key,
-        scancode: u32,
+        scancode: i32,
         action: Action,
-        mods: Modify,
+        mods: Modifiers,
     },
     char: u32,
     char_mods: struct {
         char: u32,
-        mods: Modify,
+        mods: Modifiers,
     },
     mouse_button: struct {
         button: Button,
         action: Action,
-        mods: Modify,
+        mods: Modifiers,
     },
     cursor_pos: struct { x: f64, y: f64 },
     cursor_enter: bool,
     scroll: struct { x: f64, y: f64 },
-    drop: []const []const u8,
+    /// The slices are only valid for the duration of the callback.
+    drop: []const [:0]const u8,
 };
 
 pub const EventConfig = struct {
@@ -51,8 +52,8 @@ pub const EventConfig = struct {
     focus: bool = false,
     iconify: bool = false,
     maximize: bool = false,
-    frame_buffer_size: bool = false,
-    content_sacle: bool = false,
+    framebuffer_size: bool = false,
+    content_scale: bool = false,
     key: bool = false,
     char: bool = false,
     char_mods: bool = false,
@@ -67,225 +68,153 @@ pub const VTable = struct {
     handle: *const fn (*anyopaque, event: Event) void,
 };
 
-pub fn enable_callback(self: *Window, config: EventConfig) void {
-    glfw.setWindowUserPointer(self.impl, self);
-    if (config.pos)
-        _ = glfw.setWindowPosCallback(self.impl, &when_pos);
-    if (config.size)
-        _ = glfw.setWindowSizeCallback(self.impl, &when_size);
-    if (config.close)
-        _ = glfw.setWindowCloseCallback(self.impl, &when_close);
-    if (config.refresh)
-        _ = glfw.setWindowRefreshCallback(self.impl, &when_refresh);
-    if (config.focus)
-        _ = glfw.setWindowFocusCallback(self.impl, &when_focus);
-    if (config.iconify)
-        _ = glfw.setWindowIconifyCallback(self.impl, &when_iconify);
-    if (config.maximize)
-        _ = glfw.setWindowMaximizeCallback(self.impl, &when_maximize);
-    if (config.frame_buffer_size)
-        _ = glfw.setFramebufferSizeCallback(self.impl, &when_frame_buffer_size);
-    if (config.content_sacle)
-        _ = glfw.setWindowContentScaleCallback(self.impl, &when_content_sacle);
+fn getHandle(window: ?*glfw.Window) ?*Handle {
+    const ptr = glfw.getWindowUserPointer(window) orelse return null;
+    return @ptrCast(@alignCast(ptr));
+}
 
-    if (config.key)
-        _ = glfw.setKeyCallback(self.impl, &when_key);
-    if (config.char)
-        _ = glfw.setCharCallback(self.impl, &when_char);
-    if (config.char_mods)
-        _ = glfw.setCharModsCallback(self.impl, &when_char_mods);
-    if (config.mouse_button)
-        _ = glfw.setMouseButtonCallback(self.impl, &when_mouse_button);
-    if (config.cursor_pos)
-        _ = glfw.setCursorPosCallback(self.impl, &when_cursor_pos);
-    if (config.cursor_enter)
-        _ = glfw.setCursorEnterCallback(self.impl, &when_cursor_enter);
-    if (config.scroll)
-        _ = glfw.setScrollCallback(self.impl, &when_scroll);
-    if (config.drop)
-        _ = glfw.setDropCallback(self.impl, &when_drop);
+fn modifiers(mods: c_int) Modifiers {
+    return @bitCast(@as(u6, @truncate(@as(u32, @bitCast(mods)))));
+}
+
+/// Replaces all window callbacks according to `config`. Callbacks not enabled
+/// in `config` are removed, so calling this again fully reconfigures the
+/// window instead of accumulating subscriptions.
+pub fn enable_callbacks(impl: *glfw.Window, config: EventConfig) void {
+    _ = glfw.setWindowPosCallback(impl, if (config.pos) &when_pos else null);
+    _ = glfw.setWindowSizeCallback(impl, if (config.size) &when_size else null);
+    _ = glfw.setWindowCloseCallback(impl, if (config.close) &when_close else null);
+    _ = glfw.setWindowRefreshCallback(impl, if (config.refresh) &when_refresh else null);
+    _ = glfw.setWindowFocusCallback(impl, if (config.focus) &when_focus else null);
+    _ = glfw.setWindowIconifyCallback(impl, if (config.iconify) &when_iconify else null);
+    _ = glfw.setWindowMaximizeCallback(impl, if (config.maximize) &when_maximize else null);
+    _ = glfw.setFramebufferSizeCallback(impl, if (config.framebuffer_size) &when_framebuffer_size else null);
+    _ = glfw.setWindowContentScaleCallback(impl, if (config.content_scale) &when_content_scale else null);
+
+    _ = glfw.setKeyCallback(impl, if (config.key) &when_key else null);
+    _ = glfw.setCharCallback(impl, if (config.char) &when_char else null);
+    _ = glfw.setCharModsCallback(impl, if (config.char_mods) &when_char_mods else null);
+    _ = glfw.setMouseButtonCallback(impl, if (config.mouse_button) &when_mouse_button else null);
+    _ = glfw.setCursorPosCallback(impl, if (config.cursor_pos) &when_cursor_pos else null);
+    _ = glfw.setCursorEnterCallback(impl, if (config.cursor_enter) &when_cursor_enter else null);
+    _ = glfw.setScrollCallback(impl, if (config.scroll) &when_scroll else null);
+    _ = glfw.setDropCallback(impl, if (config.drop) &when_drop else null);
 }
 
 fn when_key(this: ?*glfw.Window, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{ .key = .{
-            .key = @fromBackingInt(@intCast(key)),
-            .scancode = @intCast(scancode),
-            .action = @fromBackingInt(@intCast(action)),
-            .mods = @bitCast(@as(u6, @intCast(mods))),
-        } });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .key = .{
+        .key = @fromBackingInt(@intCast(key)),
+        .scancode = scancode,
+        .action = @fromBackingInt(@intCast(action)),
+        .mods = modifiers(mods),
+    } });
 }
+
 fn when_char(this: ?*glfw.Window, char: c_uint) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .char = @intCast(char),
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .char = @intCast(char) });
 }
+
 fn when_char_mods(this: ?*glfw.Window, char: c_uint, mods: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .char_mods = .{
-                .char = @intCast(char),
-                .mods = @bitCast(@as(u6, @intCast(mods))),
-            },
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{
+        .char_mods = .{
+            .char = @intCast(char),
+            .mods = modifiers(mods),
+        },
+    });
 }
+
 fn when_mouse_button(this: ?*glfw.Window, button: c_int, action: c_int, mods: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .mouse_button = .{
-                .button = @fromBackingInt(@intCast(button)),
-                .action = @fromBackingInt(@intCast(action)),
-                .mods = @bitCast(@as(u6, @intCast(mods))),
-            },
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{
+        .mouse_button = .{
+            .button = @fromBackingInt(@intCast(button)),
+            .action = @fromBackingInt(@intCast(action)),
+            .mods = modifiers(mods),
+        },
+    });
 }
+
 fn when_cursor_pos(this: ?*glfw.Window, x: f64, y: f64) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .cursor_pos = .{
-                .x = x,
-                .y = y,
-            },
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .cursor_pos = .{ .x = x, .y = y } });
 }
+
 fn when_cursor_enter(this: ?*glfw.Window, a: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .cursor_enter = a == glfw.TRUE,
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .cursor_enter = a == glfw.TRUE });
 }
+
 fn when_scroll(this: ?*glfw.Window, xs: f64, ys: f64) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .scroll = .{
-                .x = xs,
-                .y = ys,
-            },
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .scroll = .{ .x = xs, .y = ys } });
 }
-fn when_drop(this: ?*glfw.Window, count: c_int, path: [*c][*c]const u8) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        if (count == 0) {
-            handle.vtable.handle(self.handle_impl.?.vptr, .{ .drop = &.{} });
-        }
-        var buffer: [16 * 1024]u8 = undefined;
-        var fixed_allocator = std.heap.FixedBufferAllocator.init(&buffer);
-        const allocator = fixed_allocator.allocator();
 
-        var paths = allocator.alloc([]u8, @intCast(count)) catch unreachable;
-        for (0..@intCast(count)) |i| {
-            const len = std.mem.len(path[i]);
-            paths[i] = allocator.alloc(u8, len) catch unreachable;
-            std.mem.copyForwards(u8, paths[i], path[i][0..len]);
-        }
-
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .drop = paths,
-        });
+fn when_drop(this: ?*glfw.Window, count: c_int, paths: [*c][*c]const u8) callconv(.c) void {
+    const handle = getHandle(this) orelse return;
+    if (count == 0) {
+        handle.vtable.handle(handle.vptr, .{ .drop = &.{} });
+        return;
     }
+
+    const n: usize = @intCast(count);
+    const slices = std.heap.page_allocator.alloc([:0]const u8, n) catch return;
+    defer std.heap.page_allocator.free(slices);
+
+    for (0..n) |i| {
+        const len = std.mem.len(paths[i]);
+        slices[i] = paths[i][0..len :0];
+    }
+
+    handle.vtable.handle(handle.vptr, .{ .drop = slices });
 }
 
 fn when_pos(this: ?*glfw.Window, x: c_int, y: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .pos = .{
-                .x = x,
-                .y = y,
-            },
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .pos = .{ .x = x, .y = y } });
 }
 
 fn when_size(this: ?*glfw.Window, width: c_int, height: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .size = .{
-                .height = height,
-                .width = width,
-            },
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .size = .{ .width = width, .height = height } });
 }
 
 fn when_close(this: ?*glfw.Window) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .close);
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .close);
 }
 
 fn when_refresh(this: ?*glfw.Window) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .refresh);
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .refresh);
 }
 
 fn when_focus(this: ?*glfw.Window, f: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .focus = f == glfw.TRUE,
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .focus = f == glfw.TRUE });
 }
 
 fn when_iconify(this: ?*glfw.Window, i: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .iconify = i == glfw.TRUE,
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .iconify = i == glfw.TRUE });
 }
 
 fn when_maximize(this: ?*glfw.Window, m: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .maximize = m == glfw.TRUE,
-        });
-    }
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .maximize = m == glfw.TRUE });
 }
 
-fn when_frame_buffer_size(this: ?*glfw.Window, width: c_int, height: c_int) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .frame_buffer_size = .{
-                .height = height,
-                .width = width,
-            },
-        });
-    }
+fn when_framebuffer_size(this: ?*glfw.Window, width: c_int, height: c_int) callconv(.c) void {
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .framebuffer_size = .{
+        .width = width,
+        .height = height,
+    } });
 }
 
-fn when_content_sacle(this: ?*glfw.Window, xs: f32, ys: f32) callconv(.c) void {
-    const self: *Window = @ptrCast(@alignCast(glfw.getWindowUserPointer(this)));
-    if (self.handle_impl) |handle| {
-        handle.vtable.handle(self.handle_impl.?.vptr, .{
-            .content_sacle = .{
-                .x = xs,
-                .y = ys,
-            },
-        });
-    }
+fn when_content_scale(this: ?*glfw.Window, xs: f32, ys: f32) callconv(.c) void {
+    const handle = getHandle(this) orelse return;
+    handle.vtable.handle(handle.vptr, .{ .content_scale = .{ .x = xs, .y = ys } });
 }

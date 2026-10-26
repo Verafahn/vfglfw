@@ -17,7 +17,7 @@ pub const MyWindow = struct {
         const this: *MyWindow = @ptrCast(@alignCast(self));
         _ = this;
         switch (event) {
-            .frame_buffer_size => |size| {
+            .framebuffer_size => |size| {
                 gl.viewport(0, 0, size.width, size.height);
             },
             else => {},
@@ -32,7 +32,7 @@ pub fn main(init: std.process.Init) !void {
     var window = try glfw.Window.create(1600, 900, "triangle", .{});
     defer window.destroy();
     var triangle: MyWindow = .{};
-    window.setHandle(triangle.handle(), .{ .frame_buffer_size = true });
+    try window.setHandle(triangle.handle(), .{ .framebuffer_size = true });
     window.makeContextCurrent();
 
     if (gl.loadGLLoader(@ptrCast(&glfw.getProcAddress)) == 0) {
@@ -44,7 +44,7 @@ pub fn main(init: std.process.Init) !void {
         gl.clearColor(0.2, 0.3, 0.3, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        window.swapBuffer();
+        window.swapBuffers();
         glfw.event.poll();
     }
 }

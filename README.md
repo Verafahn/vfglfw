@@ -93,14 +93,14 @@ pub fn main(init: std.process.Init) !void {
     defer window.destroy();
 
     var app: App = .{};
-    window.setHandle(app.handle(), .{
+    try window.setHandle(app.handle(), .{
         .cursor_pos = true,
         .key = true,
         .mouse_button = true,
     });
 
     while (!window.shouldClose()) {
-        window.swapBuffer();
+        window.swapBuffers();
         glfw.event.poll();
     }
 }
@@ -133,12 +133,13 @@ if (gl.loadGLLoader(@ptrCast(&glfw.getProcAddress)) == 0)
 ## Examples
 
 ```sh
-zig build exp_window      # Window and input events
-zig build exp_background  # OpenGL clear
-zig build exp_triangle    # OpenGL 4.6 with SPIR-V shaders
+zig build exp-window      # Window and input events
+zig build exp-background  # OpenGL clear
+zig build exp-rectangle   # OpenGL rectangle
+zig build exp-triangle    # OpenGL 4.6 with SPIR-V shaders
 ```
 
-Arguments after `--` are forwarded to the example program. The OpenGL examples enable `use_gl` and `link_glfw` automatically.
+Arguments after `--` are forwarded to the example program. The OpenGL examples enable `use_gl` and `link_glfw` automatically. Run `zig build check` to compile the public API and all examples without launching them.
 
 ## License
 

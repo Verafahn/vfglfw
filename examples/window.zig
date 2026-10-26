@@ -23,7 +23,7 @@ pub fn main(init: std.process.Init) !void {
     var window = try glfw.Window.create(1600, 900, "Demo", .{});
     defer window.destroy();
     // Set `Handle` instance and the types of events to be handled.
-    window.setHandle(.{
+    try window.setHandle(.{
         .vptr = undefined,
         .vtable = .{ .handle = &handle },
     }, .{
@@ -33,7 +33,7 @@ pub fn main(init: std.process.Init) !void {
 
     // Event loop.
     while (!window.shouldClose()) {
-        window.swapBuffer();
+        window.swapBuffers();
         glfw.event.poll();
     }
 }

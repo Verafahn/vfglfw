@@ -22,7 +22,8 @@
         "build.zig",
         "build.zig.zon",
         "src",
-        "tool",
+        "test",
+        "tools",
         "LICENSE",
     },
 }

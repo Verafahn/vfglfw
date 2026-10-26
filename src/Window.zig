@@ -13,12 +13,11 @@ const State = input.State;
 const Button = input.MouseButton;
 const Rectangle = types.Rectangle2;
 const Action = input.Action;
-const Modify = input.Modify;
 const Cursor = @import("Cursor.zig");
 const Handle = @import("Handle.zig");
 
 impl: *glfw.Window,
-handle_impl: ?Handle = null,
+handle_impl: ?*Handle = null,
 
 pub const ClientApi = enum(c_int) {
     opengl = glfw.OPENGL_API,
@@ -67,8 +66,8 @@ pub const Hint = struct {
     scale_to_monitor: ?bool = null,
     scale_framebuffer: ?bool = null,
     mouse_passthrough: ?bool = null,
-    position_x: ?union(enum) { any, pos: u32 } = null,
-    position_y: ?union(enum) { any, pos: u32 } = null,
+    position_x: ?union(enum) { any, pos: i32 } = null,
+    position_y: ?union(enum) { any, pos: i32 } = null,
     red_bits: ?union(enum) { dont_care, bits: u31 } = null,
     green_bits: ?union(enum) { dont_care, bits: u31 } = null,
     blue_bits: ?union(enum) { dont_care, bits: u31 } = null,
@@ -93,14 +92,15 @@ pub const Hint = struct {
     context_release_behavior: ?ReleaseBehavior = null,
     opengl_forward_compat: ?bool = null,
     context_debug: ?bool = null,
+    context_no_error: ?bool = null,
     opengl_profile: ?Profile = null,
     win32_keyboard_menu: ?bool = null,
     win32_showdefault: ?bool = null,
     cocoa_graphics_switching: ?bool = null,
-    cocoa_frame_name: ?[]const u8 = null,
-    wayland_app_id: ?[]const u8 = null,
-    x11_class_name: ?[]const u8 = null,
-    x11_instance_name: ?[]const u8 = null,
+    cocoa_frame_name: ?[:0]const u8 = null,
+    wayland_app_id: ?[:0]const u8 = null,
+    x11_class_name: ?[:0]const u8 = null,
+    x11_instance_name: ?[:0]const u8 = null,
 };
 
 inline fn b(v: bool) @TypeOf(glfw.TRUE) {
@@ -108,6 +108,10 @@ inline fn b(v: bool) @TypeOf(glfw.TRUE) {
         true => glfw.TRUE,
         false => glfw.FALSE,
     };
+}
+
+inline fn orDontCare(value: ?u32) c_int {
+    return if (value) |v| @intCast(v) else glfw.DONT_CARE;
 }
 
 fn windowHint(hint: Hint) void {
@@ -175,18 +179,21 @@ fn windowHint(hint: Hint) void {
     if (hint.context_debug) |context_debug| {
         glfw.windowHint(glfw.CONTEXT_DEBUG, b(context_debug));
     }
+    if (hint.context_no_error) |context_no_error| {
+        glfw.windowHint(glfw.CONTEXT_NO_ERROR, b(context_no_error));
+    }
 
     if (hint.position_x) |position_x| {
         const value = switch (position_x) {
             .any => @as(c_int, @bitCast(glfw.ANY_POSITION)),
-            .pos => |pos| @as(c_int, @intCast(pos)),
+            .pos => |pos| @as(c_int, pos),
         };
         glfw.windowHint(glfw.POSITION_X, value);
     }
     if (hint.position_y) |position_y| {
         const value = switch (position_y) {
             .any => @as(c_int, @bitCast(glfw.ANY_POSITION)),
-            .pos => |pos| @as(c_int, @intCast(pos)),
+            .pos => |pos| @as(c_int, pos),
         };
         glfw.windowHint(glfw.POSITION_Y, value);
     }
@@ -286,7 +293,7 @@ fn windowHint(hint: Hint) void {
         glfw.windowHint(glfw.CLIENT_API, @backingInt(client_api));
     }
     if (hint.context_creation_api) |context_creation_api| {
-        glfw.windowHint(glfw.CLIENT_API, @backingInt(context_creation_api));
+        glfw.windowHint(glfw.CONTEXT_CREATION_API, @backingInt(context_creation_api));
     }
     if (hint.context_version_major) |context_version_major| {
         glfw.windowHint(glfw.CONTEXT_VERSION_MAJOR, @as(c_int, context_version_major));
@@ -304,16 +311,16 @@ fn windowHint(hint: Hint) void {
         glfw.windowHint(glfw.OPENGL_PROFILE, @backingInt(opengl_profile));
     }
     if (hint.cocoa_frame_name) |cocoa_frame_name| {
-        glfw.windowHintString(glfw.COCOA_FRAME_NAME, @ptrCast(cocoa_frame_name));
+        glfw.windowHintString(glfw.COCOA_FRAME_NAME, cocoa_frame_name.ptr);
     }
     if (hint.wayland_app_id) |wayland_app_id| {
-        glfw.windowHintString(glfw.WAYLAND_APP_ID, @ptrCast(wayland_app_id));
+        glfw.windowHintString(glfw.WAYLAND_APP_ID, wayland_app_id.ptr);
     }
     if (hint.x11_class_name) |x11_class_name| {
-        glfw.windowHintString(glfw.X11_CLASS_NAME, @ptrCast(x11_class_name));
+        glfw.windowHintString(glfw.X11_CLASS_NAME, x11_class_name.ptr);
     }
     if (hint.x11_instance_name) |x11_instance_name| {
-        glfw.windowHintString(glfw.X11_INSTANCE_NAME, @ptrCast(x11_instance_name));
+        glfw.windowHintString(glfw.X11_INSTANCE_NAME, x11_instance_name.ptr);
     }
 }
 
@@ -325,14 +332,14 @@ pub const WindowError = error{
     NoWindowContext,
 };
 
-pub fn create(width: u32, height: u32, title: []const u8, hint: Hint) WindowError!Window {
+pub fn create(width: u32, height: u32, title: [:0]const u8, hint: Hint) WindowError!Window {
     const monitor = if (hint.monitor) |monitor| monitor.impl else null;
     const share = if (hint.share) |share| share.impl else null;
     windowHint(hint);
     const impl = glfw.createWindow(
         @intCast(width),
         @intCast(height),
-        @ptrCast(title),
+        title.ptr,
         monitor,
         share,
     );
@@ -352,11 +359,14 @@ pub fn create(width: u32, height: u32, title: []const u8, hint: Hint) WindowErro
     return .{ .impl = impl.? };
 }
 
+/// Destroys the underlying window. A window must only be destroyed once;
+/// copies made after `setHandle` share the same callback state.
 pub fn destroy(self: Window) void {
     glfw.destroyWindow(self.impl);
+    if (self.handle_impl) |handle| std.heap.page_allocator.destroy(handle);
 }
 
-pub fn swapBuffer(self: Window) void {
+pub fn swapBuffers(self: Window) void {
     glfw.swapBuffers(self.impl);
 }
 
@@ -382,8 +392,8 @@ pub fn getTitle(self: Window) []const u8 {
     return title[0..std.mem.len(title)];
 }
 
-pub fn setTitle(self: Window, title: []const u8) void {
-    glfw.setWindowTitle(self.impl, @ptrCast(title));
+pub fn setTitle(self: Window, title: [:0]const u8) void {
+    glfw.setWindowTitle(self.impl, title.ptr);
 }
 
 pub fn iconify(self: Window) void {
@@ -416,18 +426,11 @@ pub fn requestAttention(self: Window) void {
 
 const Pos = types.Pos;
 
-pub fn getPos(self: Window) error{FeatureUnavailable}!Pos {
+pub fn getPos(self: Window) Pos {
     var x: c_int = undefined;
     var y: c_int = undefined;
     glfw.getWindowPos(self.impl, &x, &y);
-    if (x == 0 and y == 0) {
-        @branchHint(.cold);
-        glfw.check() catch |err| switch (err) {
-            error.FeatureUnavailable,
-            => return @errorCast(err),
-            else => unreachable,
-        };
-    }
+    glfw.check() catch unreachable;
     return .{ .x = @intCast(x), .y = @intCast(y) };
 }
 
@@ -436,15 +439,13 @@ pub fn setPos(self: Window, x: i32, y: i32) void {
 }
 
 const Size = types.Size;
+const Scale = types.Scale;
 
 pub fn getSize(self: Window) Size {
     var width: c_int = undefined;
     var height: c_int = undefined;
     glfw.getWindowSize(self.impl, &width, &height);
-    if (width == 0 and height == 0) {
-        @branchHint(.cold);
-        glfw.check() catch unreachable;
-    }
+    glfw.check() catch unreachable;
     return .{
         .width = @intCast(width),
         .height = @intCast(height),
@@ -458,33 +459,38 @@ pub fn setSize(self: Window, width: u32, height: u32) void {
 pub fn setSizeLimits(self: Window, min_width: ?u32, min_height: ?u32, max_width: ?u32, max_height: ?u32) void {
     glfw.setWindowSizeLimits(
         self.impl,
-        min_width orelse glfw.DONT_CARE,
-        min_height orelse glfw.DONT_CARE,
-        max_width orelse glfw.DONT_CARE,
-        max_height orelse glfw.DONT_CARE,
+        orDontCare(min_width),
+        orDontCare(min_height),
+        orDontCare(max_width),
+        orDontCare(max_height),
     );
 }
 
 pub fn setAspectRatio(self: Window, numer: ?u32, denom: ?u32) void {
     glfw.setWindowAspectRatio(
         self.impl,
-        numer orelse glfw.DONT_CARE,
-        denom orelse glfw.DONT_CARE,
+        orDontCare(numer),
+        orDontCare(denom),
     );
 }
 
-pub fn getFrameBufferSize(self: Window) Size {
+pub fn getFramebufferSize(self: Window) Size {
     var width: c_int = undefined;
     var height: c_int = undefined;
     glfw.getFramebufferSize(self.impl, &width, &height);
-    if (width == 0 and height == 0) {
-        @branchHint(.cold);
-        glfw.check() catch unreachable;
-    }
+    glfw.check() catch unreachable;
     return .{
         .width = @intCast(width),
         .height = @intCast(height),
     };
+}
+
+pub fn getContentScale(self: Window) Scale {
+    var x: f32 = undefined;
+    var y: f32 = undefined;
+    glfw.getWindowContentScale(self.impl, &x, &y);
+    glfw.check() catch unreachable;
+    return .{ .x = x, .y = y };
 }
 
 pub fn getFrameSize(self: Window) Rectangle {
@@ -493,10 +499,7 @@ pub fn getFrameSize(self: Window) Rectangle {
     var right: c_int = undefined;
     var bottom: c_int = undefined;
     glfw.getWindowFrameSize(self.impl, &left, &top, &right, &bottom);
-    if (left == 0 and top == 0 and right == 0 and bottom == 0) {
-        @branchHint(.cold);
-        glfw.check() catch unreachable;
-    }
+    glfw.check() catch unreachable;
     return .{
         .left = @intCast(left),
         .right = @intCast(right),
@@ -509,18 +512,17 @@ pub fn getOpacity(self: Window) f32 {
     return glfw.getWindowOpacity(self.impl);
 }
 
-pub fn setOpacity(self: Window, opacity: f32) void {
+pub fn setOpacity(self: Window, opacity: f32) error{InvalidValue}!void {
     glfw.setWindowOpacity(self.impl, opacity);
+    glfw.check() catch |err| switch (err) {
+        error.InvalidValue => return @errorCast(err),
+        else => unreachable,
+    };
 }
 
 pub fn getMonitor(self: Window) ?Monitor {
-    const monitor = glfw.getWindowMonitor(self.impl);
-    if (monitor == null) {
-        @branchHint(.cold);
-        glfw.check() catch unreachable;
-        return null;
-    }
-    return .{ .impl = monitor.? };
+    const monitor = glfw.getWindowMonitor(self.impl) orelse return null;
+    return .{ .impl = monitor };
 }
 
 pub fn setMonitor(self: Window, monitor: ?Monitor, x: i32, y: i32, width: u32, height: u32, fps: ?u32) void {
@@ -531,7 +533,7 @@ pub fn setMonitor(self: Window, monitor: ?Monitor, x: i32, y: i32, width: u32, h
         @intCast(y),
         @intCast(width),
         @intCast(height),
-        if (fps) |f| @intCast(f) else null,
+        if (fps) |f| @as(c_int, @intCast(f)) else glfw.DONT_CARE,
     );
 }
 
@@ -579,11 +581,11 @@ pub const AttribData = union(Attrib) {
     opengl_forward_compat: bool,
     context_debug: bool,
     doublebuffer: bool,
+    client_api: ClientApi,
+    context_creation_api: CreationApi,
     context_version_major: u8,
     context_version_minor: u8,
     context_revision: u8,
-    client_api: ClientApi,
-    context_creation_api: CreationApi,
     opengl_profile: Profile,
     context_release_behavior: ReleaseBehavior,
     context_robustness: Robustness,
@@ -620,40 +622,32 @@ inline fn attr(attrib: Attrib) c_int {
 
 pub fn getAttrib(self: Window, attrib: Attrib) AttribData {
     const data = glfw.getWindowAttrib(self.impl, attr(attrib));
-    switch (data) {
-        glfw.FOCUSED => |d| return .{ .focused = d == glfw.TRUE },
-        glfw.ICONIFIED => |d| return .{ .iconified = d == glfw.TRUE },
-        glfw.MAXIMIZED => |d| return .{ .maximized = d == glfw.TRUE },
-        glfw.HOVERED => |d| return .{ .hovered = d == glfw.TRUE },
-        glfw.VISIBLE => |d| return .{ .visible = d == glfw.TRUE },
-        glfw.RESIZABLE => |d| return .{ .resizable = d == glfw.TRUE },
-        glfw.DECORATED => |d| return .{ .decorated = d == glfw.TRUE },
-        glfw.AUTO_ICONIFY => |d| return .{ .auto_iconify = d == glfw.TRUE },
-        glfw.FLOATING => |d| return .{ .floating = d == glfw.TRUE },
-        glfw.TRANSPARENT_FRAMEBUFFER => |d| return .{ .transparent_framebuffer = d == glfw.TRUE },
-        glfw.FOCUS_ON_SHOW => |d| return .{ .focus_on_show = d == glfw.TRUE },
-        glfw.MOUSE_PASSTHROUGH => |d| return .{ .mouse_passthrough = d == glfw.TRUE },
-        glfw.CONTEXT_NO_ERROR => |d| return .{ .context_no_error = d == glfw.TRUE },
-        glfw.OPENGL_FORWARD_COMPAT => |d| return .{ .opengl_forward_compat = d == glfw.TRUE },
-        glfw.CONTEXT_DEBUG => |d| return .{ .context_debug = d == glfw.TRUE },
-        glfw.DOUBLEBUFFER => |d| return .{ .doublebuffer = d == glfw.TRUE },
-
-        glfw.CONTEXT_VERSION_MAJOR => |d| return .{ .context_version_major = @intCast(d) },
-        glfw.CONTEXT_VERSION_MINOR => |d| return .{ .context_version_minor = @intCast(d) },
-        glfw.CONTEXT_REVISION => |d| return .{ .context_revision = @intCast(d) },
-
-        glfw.CLIENT_API => |e| return .{ .client_api = @fromBackingInt(@intCast(e)) },
-        glfw.CONTEXT_CREATION_API => |e| return .{ .context_creation_api = @fromBackingInt(@intCast(e)) },
-        glfw.OPENGL_PROFILE => |e| return .{ .opengl_profile = @fromBackingInt(@intCast(e)) },
-        glfw.CONTEXT_RELEASE_BEHAVIOR => |e| return .{ .context_release_behavior = @fromBackingInt(@intCast(e)) },
-        glfw.CONTEXT_ROBUSTNESS => |e| return .{ .context_robustness = @fromBackingInt(@intCast(e)) },
-        0 => {
-            @branchHint(.cold);
-            glfw.check() catch unreachable;
-            unreachable;
-        },
-        else => unreachable,
-    }
+    return switch (attrib) {
+        .focused => .{ .focused = data == glfw.TRUE },
+        .iconified => .{ .iconified = data == glfw.TRUE },
+        .maximized => .{ .maximized = data == glfw.TRUE },
+        .hovered => .{ .hovered = data == glfw.TRUE },
+        .visible => .{ .visible = data == glfw.TRUE },
+        .resizable => .{ .resizable = data == glfw.TRUE },
+        .decorated => .{ .decorated = data == glfw.TRUE },
+        .auto_iconify => .{ .auto_iconify = data == glfw.TRUE },
+        .floating => .{ .floating = data == glfw.TRUE },
+        .transparent_framebuffer => .{ .transparent_framebuffer = data == glfw.TRUE },
+        .focus_on_show => .{ .focus_on_show = data == glfw.TRUE },
+        .mouse_passthrough => .{ .mouse_passthrough = data == glfw.TRUE },
+        .context_no_error => .{ .context_no_error = data == glfw.TRUE },
+        .opengl_forward_compat => .{ .opengl_forward_compat = data == glfw.TRUE },
+        .context_debug => .{ .context_debug = data == glfw.TRUE },
+        .doublebuffer => .{ .doublebuffer = data == glfw.TRUE },
+        .client_api => .{ .client_api = @fromBackingInt(@intCast(data)) },
+        .context_creation_api => .{ .context_creation_api = @fromBackingInt(@intCast(data)) },
+        .context_version_major => .{ .context_version_major = @intCast(data) },
+        .context_version_minor => .{ .context_version_minor = @intCast(data) },
+        .context_revision => .{ .context_revision = @intCast(data) },
+        .opengl_profile => .{ .opengl_profile = @fromBackingInt(@intCast(data)) },
+        .context_release_behavior => .{ .context_release_behavior = @fromBackingInt(@intCast(data)) },
+        .context_robustness => .{ .context_robustness = @fromBackingInt(@intCast(data)) },
+    };
 }
 
 pub const SetAttribType = enum(c_int) {
@@ -677,39 +671,47 @@ pub const SetAttrib = union(SetAttribType) {
 pub fn setAttrib(self: Window, attrib: SetAttrib) void {
     switch (attrib) {
         inline else => |a| {
-            glfw.setWindowAttrib(self.impl, @backingInt(attrib), a);
+            glfw.setWindowAttrib(self.impl, @backingInt(attrib), b(a));
         },
     }
 }
 
-pub fn setIcon(self: Window, allocator: Allocator, images: []Image) error{
+pub fn setIcon(self: Window, allocator: Allocator, images: []const Image) error{
     InvalidValue,
     FeatureUnavailable,
+    OutOfMemory,
 }!void {
-    var glfw_images = try allocator.alloc(glfw.Image, images.len);
+    for (images) |image| try image.validate();
+
+    const glfw_images = try allocator.alloc(glfw.Image, images.len);
     defer allocator.free(glfw_images);
-    for (0..glfw_images.len) |i| {
-        glfw_images[i] = glfw.Image{
-            .width = images[i].width,
-            .height = images[i].height,
-            .pixels = @ptrCast(images[i].pixels),
+    for (glfw_images, images) |*dst, image| {
+        dst.* = .{
+            .width = @intCast(image.width),
+            .height = @intCast(image.height),
+            .pixels = @ptrCast(@constCast(image.pixels.ptr)),
         };
     }
+
+    glfw.setWindowIcon(self.impl, @intCast(glfw_images.len), glfw_images.ptr);
     glfw.check() catch |err| switch (err) {
         error.InvalidValue,
         error.FeatureUnavailable,
+        error.OutOfMemory,
         => return @errorCast(err),
         else => unreachable,
     };
-    glfw.setWindowIcon(self.impl, glfw_images.len, @ptrCast(glfw_images));
 }
 
 pub fn getInputMode(self: Window, mode: ModeType) Mode {
-    const glfw_mode = glfw.getInputMode(self.impl, @backingInt(mode));
-    switch (glfw_mode) {
-        .cursor => return @fromBackingInt(@intCast(glfw_mode)),
-        else => return glfw_mode == glfw.TRUE,
-    }
+    const value = glfw.getInputMode(self.impl, @backingInt(mode));
+    return switch (mode) {
+        .cursor => .{ .cursor = @fromBackingInt(@intCast(value)) },
+        .sticky_keys => .{ .sticky_keys = value == glfw.TRUE },
+        .sticky_mouse_buttons => .{ .sticky_mouse_buttons = value == glfw.TRUE },
+        .lock_key_mods => .{ .lock_key_mods = value == glfw.TRUE },
+        .raw_mouse_motion => .{ .raw_mouse_motion = value == glfw.TRUE },
+    };
 }
 
 pub fn setInputMode(self: Window, mode: Mode) void {
@@ -730,20 +732,15 @@ pub fn getMouseButton(self: Window, button: Button) State {
 
 const fPos = types.f64Pos;
 
-pub fn getCursorPos(self: Window) error{}!fPos {
+pub fn getCursorPos(self: Window) fPos {
     var x: f64 = undefined;
     var y: f64 = undefined;
     glfw.getCursorPos(self.impl, &x, &y);
-    if (x == 0 and y == 0) {
-        glfw.check() catch |err| switch (err) {
-            error.PlatformError => return @errorCast(err),
-            else => unreachable,
-        };
-    }
+    glfw.check() catch unreachable;
     return .{ .x = x, .y = y };
 }
 
-pub fn setCursorPos(self: Window, x: f32, y: f32) void {
+pub fn setCursorPos(self: Window, x: f64, y: f64) void {
     glfw.setCursorPos(self.impl, x, y);
 }
 
@@ -751,21 +748,25 @@ pub fn setCursor(self: Window, cursor: ?Cursor) void {
     glfw.setCursor(self.impl, if (cursor) |c| c.impl else null);
 }
 
+/// Returns a wrapper for the current context. The returned value shares its
+/// callback state with the original window and must not be destroyed
+/// independently.
 pub fn getCurrentContext() ?Window {
-    const window = glfw.getCurrentContext();
-    if (window == null) {
-        @branchHint(.cold);
-        glfw.check() catch unreachable;
-        return null;
-    }
-    const ptr = glfw.getWindowUserPointer(window);
-    if (ptr == null) {
-        return .{ .impl = window.?, .event = .{} };
-    }
-    return @as(*Window, @ptrCast(ptr.?)).*;
+    const impl = glfw.getCurrentContext() orelse return null;
+    const ptr = glfw.getWindowUserPointer(impl) orelse return .{ .impl = impl };
+    return .{ .impl = impl, .handle_impl = @ptrCast(@alignCast(ptr)) };
 }
 
-pub fn setHandle(self: *Window, handle_impl: Handle, config: Handle.EventConfig) void {
-    self.handle_impl = handle_impl;
-    Handle.enable_callback(self, config);
+/// Installs a callback handle and replaces the previous event subscriptions.
+/// The handle is heap-allocated, so the window wrapper may be moved afterwards.
+/// This reserves GLFW's window user pointer for the wrapper.
+pub fn setHandle(self: *Window, handle_impl: Handle, config: Handle.EventConfig) error{OutOfMemory}!void {
+    const new_handle = try std.heap.page_allocator.create(Handle);
+    new_handle.* = handle_impl;
+
+    glfw.setWindowUserPointer(self.impl, new_handle);
+    Handle.enable_callbacks(self.impl, config);
+
+    if (self.handle_impl) |old| std.heap.page_allocator.destroy(old);
+    self.handle_impl = new_handle;
 }

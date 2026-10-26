@@ -8,6 +8,7 @@ var translate_c: *std.Build.Dependency = undefined;
 var glfw3_h_mod: *std.Build.Module = undefined;
 var glfw3_mod: *std.Build.Module = undefined;
 var vfglfw_mod: *std.Build.Module = undefined;
+var check_step: *std.Build.Step = undefined;
 
 pub fn build(b: *std.Build) !void {
     const io = b.graph.io;
@@ -30,7 +31,8 @@ pub fn build(b: *std.Build) !void {
 
     glfw3_mod = createGlfw3Mod(b);
 
-    if (b.option(bool, "link_glfw", "") orelse false) {
+    const link_glfw = b.option(bool, "link_glfw", "") orelse b.isRoot();
+    if (link_glfw) {
         glfw3_mod.linkLibrary(glfw_zig.artifact("glfw"));
     }
 
@@ -50,7 +52,21 @@ pub fn build(b: *std.Build) !void {
         vfglfw_mod.addImport("glad", glad.module("glad"));
     }
 
-    b.dependOnDirectoryContents(b.path("examples/"));
+    const api_check = b.addObject(.{
+        .name = "api_check",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("test/api_compile.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "vfglfw", .module = vfglfw_mod },
+            },
+        }),
+    });
+    b.getInstallStep().dependOn(&api_check.step);
+    check_step = b.step("check", "Compile the public API and examples");
+    check_step.dependOn(&api_check.step);
+
     try build_all_examples(b, io);
 }
 
@@ -102,6 +118,8 @@ fn build_file_examples(b: *std.Build, entry: std.Io.Dir.Entry) !void {
             },
         }),
     });
+    check_step.dependOn(&exe.step);
+
     const install = b.addInstallArtifact(exe, .{
         .dest_dir = .{
             .override = .{ .custom = "examples/" },
@@ -133,6 +151,7 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
             try b.allocator.print("zig-out/examples/{s}", .{entry.name}),
         ), .{});
         cmd.setCwd(b.path(try b.allocator.print("examples/{s}", .{entry.name})));
+        check_step.dependOn(&cmd.step);
         const step = b.step(
             try b.allocator.print("exp-{s}", .{entry.name}),
             try b.allocator.print("Run example program '{s}'.", .{entry.name}),
@@ -152,6 +171,8 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
                 },
             }),
         });
+        check_step.dependOn(&exe.step);
+
         const install = b.addInstallArtifact(exe, .{
             .dest_dir = .{
                 .override = .{ .custom = "examples/" },
@@ -169,8 +190,12 @@ fn build_dir_examples(b: *std.Build, dir: std.Io.Dir, entry: std.Io.Dir.Entry, i
 }
 
 fn build_all_examples(b: *std.Build, io: std.Io) !void {
-    const dir = try b.root.openDir(io, "examples/", .{ .iterate = true });
+    const dir = b.root.openDir(io, "examples/", .{ .iterate = true }) catch |err| switch (err) {
+        error.FileNotFound => return,
+        else => return err,
+    };
     defer dir.close(io);
+    b.dependOnDirectoryContents(b.path("examples/"));
 
     var iter = dir.iterate();
     while (try iter.next(io)) |entry|

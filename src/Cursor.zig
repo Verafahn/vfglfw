@@ -5,10 +5,11 @@ const Cursor = @This();
 impl: *glfw.Cursor,
 
 pub fn create(image: Image, xhot: i32, yhot: i32) error{InvalidValue}!Cursor {
+    try image.validate();
     const img = glfw.Image{
         .width = @intCast(image.width),
         .height = @intCast(image.height),
-        .pixels = @ptrCast(image.pixels),
+        .pixels = @ptrCast(@constCast(image.pixels.ptr)),
     };
     const cursor = glfw.createCursor(
         &img,
@@ -26,23 +27,20 @@ pub fn create(image: Image, xhot: i32, yhot: i32) error{InvalidValue}!Cursor {
     return .{ .impl = cursor.? };
 }
 
-pub const StandrandCursor = enum(c_int) {
-    ARROW = glfw.ARROW_CURSOR,
-    IBEAM = glfw.IBEAM_CURSOR,
-    CROSSHAIR = glfw.CROSSHAIR_CURSOR,
-    // POINTING_HAND = glfw.POINTING_HAND_CURSOR,
-    // RESIZE_EW = glfw.RESIZE_EW_CURSOR,
-    // RESIZE_NS = glfw.RESIZE_NS_CURSOR,
-    RESIZE_NWSE = glfw.RESIZE_NWSE_CURSOR,
-    RESIZE_NESW = glfw.RESIZE_NESW_CURSOR,
-    RESIZE_ALL = glfw.RESIZE_ALL_CURSOR,
-    NOT_ALLOWED = glfw.NOT_ALLOWED_CURSOR,
-    HRESIZE = glfw.HRESIZE_CURSOR,
-    VRESIZE = glfw.VRESIZE_CURSOR,
-    HAND = glfw.HAND_CURSOR,
+pub const StandardCursor = enum(c_int) {
+    arrow = glfw.ARROW_CURSOR,
+    ibeam = glfw.IBEAM_CURSOR,
+    crosshair = glfw.CROSSHAIR_CURSOR,
+    pointing_hand = glfw.POINTING_HAND_CURSOR,
+    resize_ew = glfw.RESIZE_EW_CURSOR,
+    resize_ns = glfw.RESIZE_NS_CURSOR,
+    resize_nwse = glfw.RESIZE_NWSE_CURSOR,
+    resize_nesw = glfw.RESIZE_NESW_CURSOR,
+    resize_all = glfw.RESIZE_ALL_CURSOR,
+    not_allowed = glfw.NOT_ALLOWED_CURSOR,
 };
 
-pub fn createStandrad(cursor: StandrandCursor) error{CursorUnavailable}!Cursor {
+pub fn createStandard(cursor: StandardCursor) error{CursorUnavailable}!Cursor {
     const cur = glfw.createStandardCursor(@backingInt(cursor));
     if (cur == null) {
         @branchHint(.cold);

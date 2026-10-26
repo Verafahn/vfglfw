@@ -4,6 +4,7 @@ const Allocator = std.mem.Allocator;
 const input = @This();
 
 pub const Key = enum(c_int) {
+    unknown = glfw.KEY_UNKNOWN,
     space = glfw.KEY_SPACE,
     apostrophe = glfw.KEY_APOSTROPHE,
     comma = glfw.KEY_COMMA,
@@ -127,7 +128,7 @@ pub const Key = enum(c_int) {
     // last = glfw.KEY_LAST,
 };
 
-pub const Modify = packed struct {
+pub const Modifiers = packed struct {
     shift: bool,
     control: bool,
     alt: bool,
@@ -137,7 +138,7 @@ pub const Modify = packed struct {
 };
 
 pub const Gamepad = struct {
-    const State = struct {
+    pub const State = struct {
         buttons: [15]input.State,
         axes: [6]f32,
     };
@@ -194,12 +195,12 @@ pub const Gamepad = struct {
         @"16" = glfw.JOYSTICK_16,
         // @"LAST" = glfw.JOYSTICK_LAST,
 
-        const Event = enum(c_int) {
+        pub const Event = enum(c_int) {
             connect = glfw.CONNECTED,
             disconnect = glfw.DISCONNECTED,
         };
 
-        const Callback = *const fn (Joystick, Event) void;
+        pub const Callback = *const fn (Joystick, Event) void;
 
         var callback_func: ?Callback = null;
         fn callback(jid: c_int, event: c_int) callconv(.c) void {
@@ -208,13 +209,10 @@ pub const Gamepad = struct {
             }
         }
 
-        pub fn enable_callback() void {
-            _ = glfw.setJoystickCallback(&callback);
-        }
-
-        pub fn setCallback(func: Callback) ?Callback {
+        pub fn setCallback(func: ?Callback) ?Callback {
             const ret = callback_func;
             callback_func = func;
+            _ = glfw.setJoystickCallback(if (func != null) &callback else null);
             return ret;
         }
 
@@ -234,39 +232,41 @@ pub const Gamepad = struct {
                 glfw.check() catch unreachable;
                 return &.{};
             }
-            return axes[0..count];
+            return axes[0..@intCast(count)];
         }
 
         /// **The caller owns the returned memory.**
-        pub fn getButton(self: Joystick, allocator: Allocator) ?[]const input.State {
+        pub fn getButtons(self: Joystick, allocator: Allocator) !?[]const input.State {
             var count: c_int = undefined;
             const states = glfw.getJoystickButtons(@backingInt(self), &count);
             if (states == null) {
                 @branchHint(.cold);
-                glfw.check() catch unreachable;
+                glfw.check() catch return null;
                 return null;
             }
-            const arr = try std.ArrayList(input.State).initCapacity(allocator, @intCast(count));
-            for (0..count) |i| {
-                arr.append(allocator, @fromBackingInt(@intCast(states[i])));
+            const n: usize = @intCast(count);
+            const result = try allocator.alloc(input.State, n);
+            for (0..n) |i| {
+                result[i] = @fromBackingInt(@intCast(states[i]));
             }
-            return arr.toOwnedSlice(allocator);
+            return result;
         }
 
         /// **The caller owns the returned memory.**
-        pub fn getHats(self: Joystick, allocator: Allocator) ?[]const Hat {
+        pub fn getHats(self: Joystick, allocator: Allocator) !?[]const Hat {
             var count: c_int = undefined;
             const hats = glfw.getJoystickHats(@backingInt(self), &count);
             if (hats == null) {
                 @branchHint(.cold);
-                glfw.check() catch unreachable;
+                glfw.check() catch return null;
                 return null;
             }
-            const arr = try std.ArrayList(input.State).initCapacity(allocator, @intCast(count));
-            for (0..count) |i| {
-                arr.append(allocator, @bitCast(@as(u4, @intCast(hats[i]))));
+            const n: usize = @intCast(count);
+            const result = try allocator.alloc(Hat, n);
+            for (0..n) |i| {
+                result[i] = @bitCast(@as(u4, @truncate(hats[i])));
             }
-            return arr.toOwnedSlice(allocator);
+            return result;
         }
 
         pub fn getName(self: Joystick) ?[]const u8 {
@@ -289,27 +289,28 @@ pub const Gamepad = struct {
             return guid[0..std.mem.len(guid)];
         }
 
-        pub fn setUserPointer(self: Joystick, ptr: *anyopaque) void {
+        pub fn setUserPointer(self: Joystick, ptr: ?*anyopaque) void {
             glfw.setJoystickUserPointer(@backingInt(self), ptr);
         }
 
-        pub fn getUserPointer(self: Joystick, comptime T: type) *T {
-            return @ptrCast(glfw.getJoystickUserPointer(@backingInt(self)));
+        pub fn getUserPointer(self: Joystick, comptime T: type) ?*T {
+            const ptr = glfw.getJoystickUserPointer(@backingInt(self)) orelse return null;
+            return @ptrCast(@alignCast(ptr));
         }
 
         pub fn isGamepad(self: Joystick) bool {
             return glfw.joystickIsGamepad(@backingInt(self)) == glfw.TRUE;
         }
 
-        pub fn updateGamepadMappings(string: []const u8) error{InvalidValue}!void {
-            const ret = glfw.updateGamepadMappings(string);
+        pub fn updateGamepadMappings(string: [:0]const u8) error{InvalidValue}!void {
+            const ret = glfw.updateGamepadMappings(string.ptr);
             if (ret == glfw.FALSE) {
                 glfw.check() catch |err| switch (err) {
                     error.InvalidValue,
                     => return @errorCast(err),
                     else => unreachable,
                 };
-                try glfw.check();
+                return error.InvalidValue;
             }
         }
 
@@ -333,7 +334,7 @@ pub const Gamepad = struct {
             }
             var btns: [15]input.State = undefined;
             inline for (0..15) |i| {
-                btns[i] = @fromBackingInt(@intCast(glfw_state[i]));
+                btns[i] = @fromBackingInt(@intCast(glfw_state.buttons[i]));
             }
             return .{
                 .buttons = btns,
@@ -388,16 +389,16 @@ pub const Mode = union(ModeType) {
     raw_mouse_motion: bool,
 };
 
-pub fn rawMouseMovtionSupported() bool {
+pub fn rawMouseMotionSupported() bool {
     return glfw.rawMouseMotionSupported() == glfw.TRUE;
 }
 
-pub const Key2 = union(enum) {
+pub const KeyQuery = union(enum) {
     key: Key,
     scancode: u32,
 };
 
-pub fn getKeyName(key: Key2) error{InvalidValue}!?[]const u8 {
+pub fn getKeyName(key: KeyQuery) error{InvalidValue}!?[]const u8 {
     const name = switch (key) {
         .key => |k| glfw.getKeyName(@backingInt(k), 0),
         .scancode => |sc| glfw.getKeyName(glfw.KEY_UNKNOWN, @intCast(sc)),
@@ -415,12 +416,11 @@ pub fn getKeyName(key: Key2) error{InvalidValue}!?[]const u8 {
 
 pub fn getKeyScancode(key: Key) ?u32 {
     const scancode = glfw.getKeyScancode(@backingInt(key));
-    if (scancode == -1) {
+    if (scancode < 0) {
         @branchHint(.cold);
-        glfw.check() catch unreachable;
         return null;
     }
-    return scancode;
+    return @intCast(scancode);
 }
 
 pub const Action = enum(c_int) {
@@ -433,3 +433,9 @@ pub const State = enum(c_int) {
     press = glfw.PRESS,
     release = glfw.RELEASE,
 };
+
+pub const key_last = Key.menu;
+pub const mouse_button_last = MouseButton.@"8";
+pub const joystick_last = Gamepad.Joystick.@"16";
+pub const gamepad_button_last = Gamepad.Button.DPAD_LEFT;
+pub const gamepad_axis_last = Gamepad.Axis.right_trigger;

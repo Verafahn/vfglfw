@@ -18,7 +18,7 @@ pub const Triangle = struct {
         const this: *Triangle = @ptrCast(@alignCast(self));
         _ = this;
         switch (event) {
-            .frame_buffer_size => |size| {
+            .framebuffer_size => |size| {
                 api.viewport(0, 0, size.width, size.height);
             },
             else => {},
@@ -48,7 +48,7 @@ pub fn main(init: std.process.Init) !void {
     });
     defer window.destroy();
     var triangle: Triangle = .{};
-    window.setHandle(triangle.handle(), .{ .frame_buffer_size = true });
+    try window.setHandle(triangle.handle(), .{ .framebuffer_size = true });
     window.makeContextCurrent();
     if (api.loadGLLoader(@ptrCast(&glfw.getProcAddress)) == 0) {
         return error.LoadGLFailed;
@@ -77,7 +77,7 @@ pub fn main(init: std.process.Init) !void {
         vertex.bind();
         api.drawArrays(api.TRIANGLES, 0, 3);
 
-        window.swapBuffer();
+        window.swapBuffers();
         glfw.event.poll();
     }
 }
