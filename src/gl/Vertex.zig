@@ -4,6 +4,7 @@ const gl = @import("glad");
 
 vao: c_uint,
 vbo: c_uint,
+ebo: ?c_uint = null,
 
 pub const Mode = enum(c_uint) {
     stream_draw = gl.STREAM_DRAW,
@@ -26,7 +27,7 @@ pub fn create(comptime T: type, vertices: []const T, mode: Mode) Vertex {
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     defer {
         gl.bindVertexArray(0);
-        gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+        gl.bindBuffer(gl.ARRAY_BUFFER, 0);
     }
     gl.bufferData(
         gl.ARRAY_BUFFER,
@@ -37,6 +38,38 @@ pub fn create(comptime T: type, vertices: []const T, mode: Mode) Vertex {
     genVertexAttribPointer(T);
 
     return .{ .vao = vao, .vbo = vbo };
+}
+
+pub fn createWithEBO(comptime T: type, vertices: []const T, comptime U: type, indices: []const U, mode: Mode) Vertex {
+    var vao: c_uint = undefined;
+    var vbo: c_uint = undefined;
+    var ebo: c_uint = undefined;
+    gl.genVertexArrays(1, &vao);
+    gl.genBuffers(1, &vbo);
+    gl.genBuffers(1, &ebo);
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
+    defer {
+        gl.bindVertexArray(0);
+        gl.bindBuffer(gl.ARRAY_BUFFER, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0);
+    }
+    gl.bufferData(
+        gl.ARRAY_BUFFER,
+        @intCast(@sizeOf(T) * vertices.len),
+        @ptrCast(vertices),
+        @backingInt(mode),
+    );
+    gl.bufferData(
+        gl.ELEMENT_ARRAY_BUFFER,
+        @intCast(@sizeOf(U) * indices.len),
+        @ptrCast(indices),
+        @backingInt(mode),
+    );
+    genVertexAttribPointer(T);
+
+    return .{ .vao = vao, .vbo = vbo, .ebo = ebo };
 }
 
 fn genVertexAttribPointer(comptime T: type) void {
@@ -93,6 +126,7 @@ fn genVertexAttribPointer(comptime T: type) void {
 pub fn destroy(self: Vertex) void {
     gl.deleteVertexArrays(1, &self.vao);
     gl.deleteBuffers(1, &self.vbo);
+    if (self.ebo) |ebo| gl.deleteBuffers(1, &ebo);
 }
 
 pub fn bind(self: Vertex) void {
